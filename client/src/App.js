@@ -12,6 +12,7 @@ import Booking from "./components/Booking";
 import Schedule from "./components/Schedule";
 import History from "./components/History";
 import MedicalRecords from "./components/MedicalRecords";
+import Articles from "./components/Articles";
 
 function App() {
   const { jwt, username } = userData();
@@ -50,6 +51,10 @@ function App() {
             <Route
               path="/profile"
               element={<Protector Component={<Profile token={jwt} />} />}
+            />
+            <Route
+              path="/articles"
+              element={<Protector Component={<Articles token={jwt} />} />}
             />
           </Routes>
           <ToastContainer />

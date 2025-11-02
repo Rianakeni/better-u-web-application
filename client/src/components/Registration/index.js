@@ -40,12 +40,30 @@ const Registration = () => {
         return;
       }
 
+      // Validasi nomor telepon (contoh: minimal 10 digit angka)
+      const phoneRegex = /^[0-9]{10,}$/;
+      if (!phoneRegex.test(user.phonenumber)) {
+        toast.error(
+          "Invalid phone number format. Must be at least 10 digits.",
+          {
+            hideProgressBar: true,
+          }
+        );
+        return;
+      }
+
       // URL API untuk registrasi
       const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
       const url = `${API_URL}/api/auth/local/register`;
 
       // Kirim data ke API
-      const res = await axios.post(url, user);
+      // Pastikan backend Strapi Anda sudah di-custom untuk menerima 'phonenumber'
+      const res = await axios.post(url, {
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        phonenumber: user.phonenumber, // Mengirim field kustom
+      });
 
       // Cek apakah request berhasil
       if (res.status === 200) {
@@ -97,7 +115,7 @@ const Registration = () => {
           </FormGroup>
           <FormGroup>
             <Input
-              type="text"
+              type="text" // Anda bisa mengganti type="tel" untuk usability di mobile
               name="phonenumber"
               value={user.phonenumber}
               onChange={handleUserChange}
