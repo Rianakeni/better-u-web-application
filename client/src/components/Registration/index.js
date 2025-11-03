@@ -92,7 +92,7 @@ const Registration = () => {
 
   return (
     <Row className="register">
-      <Col sm="12" md={{ size: 4, offset: 4 }}>
+      <Col sm="12" md={{ size: 4 }}>
         <div>
           <h2>Sign up:</h2>
           <FormGroup>

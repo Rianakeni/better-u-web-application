@@ -111,7 +111,7 @@ const Articles = () => {
                     <Button
                       variant="success"
                       size="sm"
-                      onClick={() => updateArticle(article.id, "publish")}
+                      onClick={() => updateArticle(article.id, "published")}
                     >
                       Publish
                     </Button>

@@ -1,5 +1,5 @@
 import React from "react";
-import { useMySchedule } from "./useMySchedule";
+import { useSchedules } from "./useSchedule";
 import { Protector } from "../../helpers";
 import { useNavigate } from "react-router-dom";
 
@@ -58,7 +58,7 @@ const AppointmentCard = ({ appt, onEdit }) => {
 };
 
 const MySchedule = ({ token }) => {
-  const { appointments, loading } = useMySchedule(token);
+  const { appointments, loading } = useSchedules(token);
   const navigate = useNavigate();
 
   const handleEdit = (appt) => {

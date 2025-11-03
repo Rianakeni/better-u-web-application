@@ -1,37 +1,46 @@
-import { useState, useEffect } from "react";
+// src/hooks/useAppointments.js
+import { useState } from "react";
 import axios from "axios";
 
 export const useAppointments = () => {
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const fetchSlots = async () => {
+  const createAppointment = async (studentId, scheduleSlug) => {
+    if (!studentId) {
+      throw new Error("Student ID tidak valid");
+    }
+
+    if (!scheduleSlug) {
+      throw new Error("Schedule slug tidak valid");
+    }
+
+    setLoading(true);
     try {
-      // fetch all appointments and filter on client - backend may not expose 'available' filter
-      const { data } = await axios.get(
-        "http://localhost:1337/api/schedules?populate=*"
+      const response = await axios.post(
+        "http://localhost:1337/api/appointments",
+        {
+          data: {
+            student: studentId,
+            schedule: {
+              slug: scheduleSlug,
+            },
+            statusJadwal: "booked",
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
-      const all = data.data || [];
-      // consider slot available if it has no student relation
-      const available = all.filter((a) => {
-        const student = a.attributes.student;
-        // student can be null or have data
-        if (!student) return true;
-        if (student.data === null) return true;
-        return false;
-      });
-      setSlots(available);
+
+      return response.data;
     } catch (err) {
-      console.error("fetchSlots", err);
-      setSlots([]);
+      throw new Error(err.response?.data?.error?.message || err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSlots();
-  }, []);
-
-  return { slots, loading, refresh: fetchSlots };
+  return { createAppointment, loading };
 };
