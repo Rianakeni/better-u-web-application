@@ -25,7 +25,6 @@ export const useSchedules = () => {
 
       setSchedules(schedulesData.data);
     } catch (err) {
-      console.error("Error fetching schedules:", err);
       setSchedules([]);
     } finally {
       setLoading(false);

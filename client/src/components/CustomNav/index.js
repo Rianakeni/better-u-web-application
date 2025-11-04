@@ -45,37 +45,41 @@ const CustomNav = ({ basketItems, isLoggedIn, username }) => {
                   </DropdownToggle>
                   <DropdownMenu end>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/dashboard">
+                      <NavLink tag={Link} to="/dashboard" onClick={toggle}>
                         Dashboard
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/booking">
+                      <NavLink tag={Link} to="/booking" onClick={toggle}>
                         Booking Janji
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/jadwal">
+                      <NavLink tag={Link} to="/jadwal" onClick={toggle}>
                         Jadwal Anda
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/riwayat">
+                      <NavLink tag={Link} to="/riwayat" onClick={toggle}>
                         Riwayat
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/articles">
+                      <NavLink tag={Link} to="/articles" onClick={toggle}>
                         Articles
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/profile">
+                      <NavLink tag={Link} to="/profile" onClick={toggle}>
                         Profil
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem divider />
-                    <DropdownItem>{loginLogout}</DropdownItem>
+                    <DropdownItem>
+                      <div onClick={toggle}>
+                        {loginLogout}
+                      </div>
+                    </DropdownItem>
                   </DropdownMenu>
                 </>
               ) : (

@@ -30,7 +30,7 @@ const MedicalRecords = () => {
         const appointmentsData = await client.collection('appointments').find();
         setAppointments(appointmentsData.data || []);
       } catch (error) {
-        console.error("Error fetching data: ", error);
+        // Error handled silently
       }
     };
 
@@ -70,7 +70,7 @@ const MedicalRecords = () => {
         appointment: "",
       });
     } catch (error) {
-      console.error("Error creating record: ", error);
+      // Error handled silently
     }
   };
 
@@ -81,7 +81,7 @@ const MedicalRecords = () => {
       await client.collection('medical-records').delete(id);
       setRecords(records.filter((record) => record.id !== id));
     } catch (error) {
-      console.error("Error deleting record: ", error);
+      // Error handled silently
     }
   };
 

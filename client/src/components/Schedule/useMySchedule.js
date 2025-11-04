@@ -14,7 +14,7 @@ export const useMySchedule = (token) => {
       }
 
       const user = await fetchCurrentUser();
-      const userId = user?.id || user?.data?.id;
+      const userId = user?.id || user?.data?.id || user?.documentId;
 
       if (!userId) {
         setAppointments([]);
@@ -29,7 +29,6 @@ export const useMySchedule = (token) => {
 
       setAppointments(appointmentsData.data || []);
     } catch (err) {
-      console.error("fetchMyAppointments", err);
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -39,7 +38,7 @@ export const useMySchedule = (token) => {
   useEffect(() => {
     fetchMyAppointments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token]); // Re-fetch when token changes (e.g., after login or booking)
 
   return { appointments, loading, refresh: fetchMyAppointments };
 };

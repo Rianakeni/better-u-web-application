@@ -53,8 +53,19 @@ strapiAxios.interceptors.response.use(
 
 // Convenience methods untuk custom endpoints
 export const fetchCurrentUser = async () => {
-  const { data } = await strapiAxios.get('/users/me');
-  return data;
+  try {
+    // Try dengan populate avatar (format array untuk Strapi v5)
+    const { data } = await strapiAxios.get('/users/me?populate[0]=avatar');
+    return data;
+  } catch (populateErr) {
+    // If populate fails, try without populate (fallback)
+    try {
+      const { data } = await strapiAxios.get('/users/me');
+      return data;
+    } catch (noPopulateErr) {
+      throw noPopulateErr;
+    }
+  }
 };
 
 export const getCurrentUserId = async () => {
@@ -92,13 +103,54 @@ export const uploadFile = async (file, name = null) => {
 };
 
 // Update user
+// Note: Untuk Strapi v5, user hanya bisa update profile sendiri menggunakan /users/me endpoint
 export const updateUser = async (userId, userData) => {
-  const { data } = await strapiAxios.put(`/users/${userId}`, userData, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return data;
+  // Strapi v5: Format data dengan wrapper { data: { ... } }
+  // Handle avatar: Strapi v5 expect ID saja (number), bukan object
+  let formattedData = { ...userData };
+  
+  // Handle avatar: Strapi v5 menggunakan relation 'avatar' dengan ID saja
+  if (userData.avatarId) {
+    // Format untuk Strapi v5: avatar sebagai relation ID (number saja, bukan object)
+    formattedData.avatar = userData.avatarId; // ID saja, bukan object
+    // Remove avatarId dan avatarUrl jika ada (disimpan sebagai relation)
+    delete formattedData.avatarId;
+    delete formattedData.avatarUrl;
+  } else if (userData.avatar) {
+    // Jika avatar adalah object { id, url }, extract ID saja
+    if (typeof userData.avatar === 'object' && userData.avatar.id) {
+      formattedData.avatar = userData.avatar.id; // Extract ID saja
+    } else {
+      // Jika avatar sudah ID, pakai langsung
+      formattedData.avatar = userData.avatar;
+    }
+  }
+  
+  const updatePayload = {
+    data: formattedData
+  };
+
+  // Always use /users/me for Strapi v5 (more secure and doesn't need userId)
+  try {
+    const { data } = await strapiAxios.put('/users/me', updatePayload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return data;
+  } catch (meErr) {
+    // If /users/me fails, try without data wrapper (Strapi v4 style)
+    try {
+      const { data } = await strapiAxios.put('/users/me', formattedData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return data;
+    } catch (directErr) {
+      throw directErr;
+    }
+  }
 };
 
 // Helper untuk build query string dengan qs (untuk query kompleks yang tidak support di Strapi client)
@@ -158,29 +210,11 @@ export const buildStrapiQuery = (params) => {
 // Fetch dengan axios untuk query kompleks (fallback jika Strapi client tidak support)
 export const fetchWithQuery = async (endpoint, queryParams) => {
   const query = buildStrapiQuery(queryParams);
-  const fullUrl = `${strapiAxios.defaults.baseURL}${endpoint}?${query}`;
-  
-  console.log('🔍 Request URL:', fullUrl);
   
   try {
     const { data } = await strapiAxios.get(`${endpoint}?${query}`);
-    
-    // Log response structure untuk debugging Strapi v5
-    console.log('✅ Response structure:', {
-      hasData: !!data.data,
-      isArray: Array.isArray(data.data),
-      dataLength: data.data?.length,
-      firstItem: data.data?.[0],
-      firstItemKeys: data.data?.[0] ? Object.keys(data.data[0]) : null,
-      hasAttributes: data.data?.[0]?.attributes !== undefined,
-      hasDocumentId: data.data?.[0]?.documentId !== undefined,
-      hasId: data.data?.[0]?.id !== undefined,
-    });
-    
     return data;
   } catch (error) {
-    console.error('❌ Query failed:', fullUrl);
-    console.error('❌ Error response:', JSON.stringify(error.response?.data, null, 2));
     throw error;
   }
 };

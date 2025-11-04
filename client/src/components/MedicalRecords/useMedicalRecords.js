@@ -19,7 +19,7 @@ function MedicalRecordDetail({ id }) {
       });
       setRecord(recordData.data);
     } catch (error) {
-      console.error("Error fetching record:", error);
+      // Error handled silently
     }
   }
 
@@ -29,7 +29,7 @@ function MedicalRecordDetail({ id }) {
       await strapiAxios.post(`/medical-records/${id}/generate-pdf`);
       await fetchRecord();
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }

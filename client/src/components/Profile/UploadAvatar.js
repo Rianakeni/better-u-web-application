@@ -50,16 +50,42 @@ const UpoloadAvatar = ({
 
     try {
       const uploadedFiles = await uploadFile(file, `${username} avatar`);
-      const [{ id, url }] = uploadedFiles;
       
-      await updateUser(userId, { avatarId: id, avatarUrl: url });
+      // Handle Strapi v5 response format (array of files or single file object)
+      const fileData = Array.isArray(uploadedFiles) ? uploadedFiles[0] : uploadedFiles;
+      const id = fileData.id || fileData.data?.id || fileData.documentId;
+      const url = fileData.url || fileData.data?.attributes?.url || fileData.data?.url;
       
+      if (!id || !url) {
+        throw new Error('Invalid file upload response');
+      }
+      
+      // Strapi v5: Avatar sebagai relation dengan ID saja (number)
+      // Format: { avatar: id } atau { avatarId: id }
+      // userId tidak diperlukan karena menggunakan /users/me endpoint
+      await updateUser(userId, { avatarId: id }); // avatarId akan di-convert ke avatar relation
+      
+      // Set flag untuk trigger refresh profile
       setisUserUpdated(true);
+      
+      toast.success("Avatar uploaded successfully!", {
+        hideProgressBar: true,
+      });
+      
       setFile(null);
       setModal(false);
+      
+      // Force refresh profile after a short delay
+      setTimeout(() => {
+        setisUserUpdated(true);
+      }, 500);
     } catch (error) {
-      console.log({ error });
-      toast.error("Failed to upload avatar", {
+      const errorMessage = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           error.message || 
+                           "Failed to upload avatar";
+      
+      toast.error(errorMessage, {
         hideProgressBar: true,
       });
     }

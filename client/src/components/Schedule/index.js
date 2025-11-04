@@ -1,21 +1,39 @@
-import React from "react";
-import { useSchedules } from "./useSchedule";
+import React, { useEffect } from "react";
+import { useMySchedule } from "./useMySchedule";
 import { Protector } from "../../helpers";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const AppointmentCard = ({ appt, onEdit }) => {
-  const attrs = appt.attributes || {};
-  const scheduleRel = attrs.schedule?.data?.attributes || {};
+  // Strapi v5: data langsung di root, tidak ada attributes wrapper
+  // Support both v4 (with attributes) and v5 (without attributes)
+  const attrs = appt.attributes || appt || {};
+  
+  // Strapi v5: populate langsung di root, tidak ada .data.attributes
+  // Support both formats (v4: schedule.data.attributes, v5: schedule.data atau schedule)
+  const scheduleRel = attrs.schedule?.data?.attributes || 
+                       attrs.schedule?.data || 
+                       attrs.schedule || {};
+  
   const scheduleComp = scheduleRel.schedule ? scheduleRel.schedule[0] : null;
   const tanggal = scheduleComp?.tanggal || scheduleRel?.tanggal || attrs.date;
-  const jam =
-    scheduleComp?.jam ||
-    scheduleRel?.jam ||
-    `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+  
+  // Jam: support both v4 and v5 format
+  const jam_mulai = scheduleRel.jam_mulai || scheduleComp?.jam_mulai;
+  const jam_selesai = scheduleRel.jam_selesai || scheduleComp?.jam_selesai;
+  const jam = jam_mulai && jam_selesai 
+    ? `${jam_mulai} - ${jam_selesai}`
+    : scheduleComp?.jam ||
+      scheduleRel?.jam ||
+      `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+  
+  // Konselor: support both v4 and v5 format
   const konselor =
     attrs.konselor?.data?.attributes?.username ||
+    attrs.konselor?.data?.username ||
+    attrs.konselor?.username ||
     attrs.konselor ||
     "dr. konselor";
+  
   const status = (attrs.statusJadwal || "").trim();
 
   const statusLabel =
@@ -58,8 +76,15 @@ const AppointmentCard = ({ appt, onEdit }) => {
 };
 
 const MySchedule = ({ token }) => {
-  const { appointments, loading } = useSchedules(token);
+  const { appointments, loading, refresh } = useMySchedule(token);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Refresh data saat navigate ke halaman ini (misalnya setelah booking)
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // Re-fetch when pathname changes
 
   const handleEdit = (appt) => {
     // currently navigate to booking page for reschedule; could be enhanced
@@ -80,7 +105,7 @@ const MySchedule = ({ token }) => {
         ) : appointments && appointments.length ? (
           <div className="schedule-grid">
             {appointments.map((a) => (
-              <AppointmentCard key={a.id} appt={a} onEdit={handleEdit} />
+              <AppointmentCard key={a.id || a.documentId} appt={a} onEdit={handleEdit} />
             ))}
           </div>
         ) : (

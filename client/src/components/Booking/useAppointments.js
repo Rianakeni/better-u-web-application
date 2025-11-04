@@ -11,27 +11,20 @@ export const useAppointments = () => {
     setLoading(true);
     try {
       const client = getStrapiClient();
+      // Filter hanya yang isBooked: false (belum di-booking)
       const schedulesData = await client.collection('schedules').find({
+        filters: {
+          isBooked: {
+            $eq: false
+          }
+        },
         populate: '*',
         sort: ['tanggal:asc', 'jam_mulai:asc']
       });
       
-      const all = schedulesData.data || [];
-      
-      // Filter available slots (no student relation)
-      const available = all.filter((a) => {
-        if (!a || !a.attributes) return false;
-        
-        const student = a.attributes.student;
-        if (!student) return true;
-        if (student.data === null || student.data === undefined) return true;
-        
-        return false;
-      });
-      
+      const available = schedulesData.data || [];
       setSlots(available);
     } catch (err) {
-      console.error("fetchSlots error:", err);
       setSlots([]);
     } finally {
       setLoading(false);

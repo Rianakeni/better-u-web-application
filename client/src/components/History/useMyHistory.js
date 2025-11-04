@@ -30,7 +30,6 @@ export const useMyHistory = (token) => {
 
       setHistory(historyData.data || []);
     } catch (err) {
-      console.error("fetchHistory", err);
       setHistory([]);
     } finally {
       setLoading(false);
