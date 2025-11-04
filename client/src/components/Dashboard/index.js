@@ -15,7 +15,9 @@ const SmallItem = ({ item, type }) => {
   const jam_selesai = schedule.jam_selesai;
   // Ambil nama konselor
   const konselor =
-    attrs.konselor?.data?.attributes?.username || attrs.konselor || "dr. konselor";
+    attrs.konselor?.data?.attributes?.username ||
+    attrs.konselor ||
+    "dr. konselor";
 
   const dateStr = tanggal
     ? new Date(tanggal).toLocaleDateString("id-ID", {
@@ -31,9 +33,7 @@ const SmallItem = ({ item, type }) => {
 
   return (
     <div
-      className={`dash-item ${
-        type === "upcoming" ? "upcoming" : "history"
-      }`}
+      className={`dash-item ${type === "upcoming" ? "upcoming" : "history"}`}
     >
       <div className="dash-item-left">
         <div className="dash-item-date">{dateStr}</div>
@@ -44,7 +44,10 @@ const SmallItem = ({ item, type }) => {
         {type === "history" && attrs.medical_record?.data?.id ? (
           <a
             className="download-btn"
-            href={`http://localhost:1337${attrs.medical_record.data.attributes.filePDF?.data?.attributes?.url || ""}`}
+            href={`https://ethical-benefit-bb8bd25123.strapiapp.com/api/${
+              attrs.medical_record.data.attributes.filePDF?.data?.attributes
+                ?.url || ""
+            }`}
             target="_blank"
             rel="noreferrer"
           >
@@ -106,7 +109,7 @@ const Dashboard = () => {
             </div>
           </div>
         </section>
-        
+
         <section className="hero-articles">
           <h3>Latest Articles</h3>
           <div className="articles-grid">
@@ -123,9 +126,11 @@ const Dashboard = () => {
                   </div>
                   <div className="hero-image">
                     {attrs.coverImage?.data?.attributes?.url && (
-                      <img 
-                        src={`http://localhost:1337${attrs.coverImage.data.attributes.url}`} 
-                        alt={attrs.coverImage.data.attributes.alternativeText || ""}
+                      <img
+                        src={`https://ethical-benefit-bb8bd25123.strapiapp.com/api/articles/${attrs.coverImage.data.attributes.url}`}
+                        alt={
+                          attrs.coverImage.data.attributes.alternativeText || ""
+                        }
                       />
                     )}
                   </div>

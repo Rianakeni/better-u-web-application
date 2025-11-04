@@ -58,7 +58,7 @@ export const useDashboard = (token) => {
 
         // Ambil data history (semua appointments) berdasarkan user ID
         const { data: historyData } = await axios.get(
-          `http://localhost:1337/api/appointments?filters[student][id][$eq]=${userId}&populate=*`,
+          `http://localhost:1337/api/appointments?filters[statusJadwal][$eq]=Completed&filters[student][id][$eq]=${userId}&populate[schedule][fields][0]=tanggal&populate[schedule][fields][1]=jam_mulai&populate[schedule][fields][2]=jam_selesai&populate[konselor][fields][0]=username`,
           config
         );
         setHistory(historyData.data || []);

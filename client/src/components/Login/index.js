@@ -20,7 +20,7 @@ const Login = () => {
   };
 
   const handleLogin = async () => {
-    const url = `http://localhost:1337/api/auth/local`;
+    const url = `https://ethical-benefit-bb8bd25123.strapiapp.com/api/auth/local`;
     try {
       if (user.identifier && user.password) {
         const { data } = await axios.post(url, user);
