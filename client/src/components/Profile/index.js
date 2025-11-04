@@ -6,11 +6,12 @@ import UpoloadAvatar from "./UploadAvatar";
 const Profile = ({ token }) => {
   const [user, setUser] = useState({});
   const [isUserUpdated, setisUserUpdated] = useState(false);
+  const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
 
   useEffect(() => {
     const getProfileData = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:1337/api/users/me`, {
+        const { data } = await axios.get(`${API_URL}/api/users/me`, {
           headers: {
             Authorization: `bearer ${token}`,
           },
@@ -30,7 +31,7 @@ const Profile = ({ token }) => {
         <div className="avatar-wrapper">
           {user.avatarUrl ? (
             <img
-              src={`http://localhost:1337${user.avatarUrl}`}
+              src={`${API_URL}${user.avatarUrl}`}
               alt={`${user.username} avatar`}
             />
           ) : (

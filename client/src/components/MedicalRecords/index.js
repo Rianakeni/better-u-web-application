@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const MedicalRecords = () => {
   const [records, setRecords] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -17,7 +19,7 @@ const MedicalRecords = () => {
     // Get all medical records
     axios
       .get(
-        "http://localhost:1337/api/medical-records?populate[appointment]=true"
+        `${API_URL}/api/medical-records?populate[appointment]=true`
       )
       .then((response) => {
         setRecords(response.data.data);
@@ -26,7 +28,7 @@ const MedicalRecords = () => {
 
     // Get all available appointments
     axios
-      .get("http://localhost:1337/api/appointments")
+      .get(`${API_URL}/api/appointments`)
       .then((response) => {
         setAppointments(response.data.data);
       })
@@ -46,7 +48,7 @@ const MedicalRecords = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     axios
-      .post("http://localhost:1337/api/medical-records", {
+      .post(`${API_URL}/api/medical-records`, {
         data: {
           permasalahan: newRecord.permasalahan,
           diagnosa: newRecord.diagnosa,
@@ -71,7 +73,7 @@ const MedicalRecords = () => {
   // Handle delete record
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:1337/api/medical-records/${id}`)
+      .delete(`${API_URL}/api/medical-records/${id}`)
       .then((response) => {
         setRecords(records.filter((record) => record.id !== id));
       })

@@ -20,7 +20,8 @@ const Login = () => {
   };
 
   const handleLogin = async () => {
-    const url = `http://localhost:1337/api/auth/local`;
+    const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+    const url = `${API_URL}/api/auth/local`;
     try {
       if (user.identifier && user.password) {
         const { data } = await axios.post(url, user);
@@ -35,7 +36,11 @@ const Login = () => {
         }
       }
     } catch (error) {
-      toast.error(error.message, {
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.message ||
+        "Login failed. Please check your credentials.";
+      toast.error(errorMessage, {
         hideProgressBar: true,
       });
     }

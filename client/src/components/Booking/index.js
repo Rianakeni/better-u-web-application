@@ -4,6 +4,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { userData, Protector } from "../../helpers";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const SlotCard = ({ slot, onBook }) => {
   const attrs = slot.attributes || {};
   const schedule = attrs.date || {};
@@ -61,7 +63,7 @@ const Booking = () => {
     setBusy(true);
     try {
       // get current user id
-      const meRes = await axios.get("http://localhost:1337/api/users/me", {
+      const meRes = await axios.get(`${API_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const userId = meRes.data?.id || meRes.data?.data?.id;
@@ -75,7 +77,7 @@ const Booking = () => {
       };
 
       await axios.put(
-        `http://localhost:1337/api/appointments/${slot.id}`,
+        `${API_URL}/api/appointments/${slot.id}`,
         payload,
         { headers: { Authorization: `Bearer ${jwt}` } }
       );

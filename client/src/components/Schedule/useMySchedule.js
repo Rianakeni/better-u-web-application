@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 export const useMySchedule = (token) => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +15,7 @@ export const useMySchedule = (token) => {
         : {};
       // get current user id
       const meRes = await axios.get(
-        "http://localhost:1337/api/users/me",
+        `${API_URL}/api/users/me`,
         config
       );
       const userId = meRes.data?.id || meRes.data?.data?.id;
@@ -24,7 +26,7 @@ export const useMySchedule = (token) => {
       }
 
       const res = await axios.get(
-        `http://localhost:1337/api/appointments?filters[student][id]=${userId}&populate=schedule.schedule,konselor,medical_record&sort=id:ASC`,
+        `${API_URL}/api/appointments?filters[student][id]=${userId}&populate=schedule.schedule,konselor,medical_record&sort=id:ASC`,
         config
       );
 

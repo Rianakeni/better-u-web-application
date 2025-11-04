@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 export const useAppointments = () => {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +11,7 @@ export const useAppointments = () => {
     try {
       // fetch all appointments and filter on client - backend may not expose 'available' filter
       const { data } = await axios.get(
-        "http://localhost:1337/api/schedules?populate=*"
+        `${API_URL}/api/schedules?populate=*`
       );
       const all = data.data || [];
       // consider slot available if it has no student relation

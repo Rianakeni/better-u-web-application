@@ -2,6 +2,8 @@ import React from "react";
 import { useMyHistory } from "./useMyHistory";
 import { Protector } from "../../helpers";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const HistoryCard = ({ item }) => {
   const attrs = item.attributes || {};
   const scheduleRel = attrs.schedule?.data?.attributes || {};
@@ -36,7 +38,7 @@ const HistoryCard = ({ item }) => {
         {attrs.medical_record?.data?.id ? (
           <a
             className="download-btn"
-            href={`http://localhost:1337${
+            href={`${API_URL}${
               attrs.medical_record.data.attributes.file?.data?.attributes
                 ?.url || ""
             }`}

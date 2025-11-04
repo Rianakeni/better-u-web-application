@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useDashboard } from "./useDashboard";
 import { Protector } from "../../helpers";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const SmallItem = ({ item, type }) => {
   const attrs = item.attributes || {};
   const date = attrs.date
@@ -32,7 +34,7 @@ const SmallItem = ({ item, type }) => {
         {type === "history" && attrs.media?.data?.length ? (
           <a
             className="download-btn"
-            href={`http://localhost:1337${attrs.media.data[0].attributes.url}`}
+            href={`${API_URL}${attrs.media.data[0].attributes.url}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -138,7 +140,7 @@ const Dashboard = ({ token }) => {
               <div className="hero-image">
                 {articles[0].attributes.image?.data?.attributes?.url ? (
                   <img
-                    src={`http://localhost:1337${articles[0].attributes.image.data.attributes.url}`}
+                    src={`${API_URL}${articles[0].attributes.image.data.attributes.url}`}
                     alt={articles[0].attributes.title}
                   />
                 ) : null}

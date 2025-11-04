@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 export const useDashboard = (token) => {
   const [profile, setProfile] = useState(null);
   const [upcoming, setUpcoming] = useState([]);
@@ -14,7 +16,7 @@ export const useDashboard = (token) => {
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
       const { data } = await axios.get(
-        "http://localhost:1337/api/users/me",
+        `${API_URL}/api/users/me`,
         config
       );
       setProfile(data);
@@ -29,12 +31,12 @@ export const useDashboard = (token) => {
       // upcoming
       const today = new Date().toISOString();
       const { data: upcomingData } = await axios.get(
-        `http://localhost:1337/api/appointments?filters[date][$gte]=${today}&sort=date:ASC&populate=doctor,media`
+        `${API_URL}/api/appointments?filters[statusJadwal][$eq]=Scheduled&filters[student][id][$eq]=${userId}&populate[schedule][fields][0]=tanggal&populate[schedule][fields][1]=jam_mulai&populate[schedule][fields][2]=jam_selesai&populate[konselor][fields][0]=username`
       );
       setUpcoming(upcomingData.data || []);
 
       const { data: historyData } = await axios.get(
-        `http://localhost:1337/api/appointments?filters[date][$lt]=${today}&sort=date:DESC&populate=doctor,media`
+        `${API_URL}/api/appointments?filters[date][$lt]=${today}&sort=date:DESC&populate=doctor,media`
       );
       setHistory(historyData.data || []);
     } catch (err) {
@@ -47,7 +49,7 @@ export const useDashboard = (token) => {
   const fetchArticles = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:1337/api/articles?populate=image"
+        `${API_URL}/api/articles?populate=image`
       );
       setArticles(data.data || []);
     } catch (err) {

@@ -4,6 +4,8 @@ import useArticles from "./useArticles";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const Articles = () => {
   const { articles, loading, error, addArticle, deleteArticle, updateArticle } =
     useArticles();
@@ -16,7 +18,7 @@ const Articles = () => {
     const checkRole = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:1337/api/users/me", {
+        const response = await fetch(`${API_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

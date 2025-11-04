@@ -1,6 +1,8 @@
 // MedicalRecordDetail.jsx
 import { useState } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 function MedicalRecordDetail({ id }) {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -8,7 +10,7 @@ function MedicalRecordDetail({ id }) {
   // misal ini dipanggil di useEffect buat ambil data awal
   async function fetchRecord() {
     const res = await fetch(
-      `http://localhost:1337/api/medical-records/${id}?populate[filePDF]=true`
+      `${API_URL}/api/medical-records/${id}?populate[filePDF]=true`
     );
     const json = await res.json();
     setRecord(json.data);
@@ -16,7 +18,7 @@ function MedicalRecordDetail({ id }) {
 
   async function handleGeneratePdf() {
     setLoading(true);
-    await fetch(`http://localhost:1337/api/medical-records/${id}/generate-pdf`, {
+    await fetch(`${API_URL}/api/medical-records/${id}/generate-pdf`, {
       method: "POST", // atau GET, terserah kamu bikin di Strapi
     });
     await fetchRecord(); // refresh supaya field filePDF keisi
@@ -31,7 +33,7 @@ function MedicalRecordDetail({ id }) {
 
       {record?.attributes?.filePDF?.data && (
         <a
-          href={`http://localhost:1337${record.attributes.filePDF.data.attributes.url}`}
+          href={`${API_URL}${record.attributes.filePDF.data.attributes.url}`}
           target="_blank"
           rel="noreferrer"
         >

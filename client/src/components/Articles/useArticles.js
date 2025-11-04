@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+
 const useArticles = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ const useArticles = () => {
   const fetchArticles = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:1337/api/articles", {
+      const response = await axios.get(`${API_URL}/api/articles`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -33,7 +35,7 @@ const useArticles = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:1337/api/articles",
+        `${API_URL}/api/articles`,
         {
           data: {
             title,
@@ -56,7 +58,7 @@ const useArticles = () => {
   const deleteArticle = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:1337/api/articles/${id}`, {
+      await axios.delete(`${API_URL}/api/articles/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -72,7 +74,7 @@ const useArticles = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:1337/api/articles/${id}`,
+        `${API_URL}/api/articles/${id}`,
         {
           data: {
             status,

@@ -53,7 +53,7 @@ const Registration = () => {
       }
 
       // URL API untuk registrasi
-      const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
+      const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
       const url = `${API_URL}/api/auth/local/register`;
 
       // Kirim data ke API

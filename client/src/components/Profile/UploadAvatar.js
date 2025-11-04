@@ -20,6 +20,7 @@ const UpoloadAvatar = ({
   avatarUrl,
   setisUserUpdated,
 }) => {
+  const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
   const [modal, setModal] = useState(false);
   const [file, setFile] = useState(null);
 
@@ -43,7 +44,7 @@ const UpoloadAvatar = ({
   const upateUserAvatarId = async (avatarId, avatarUrl) => {
     try {
       await axios.put(
-        `http://localhost:1337/api/users/${userId}`,
+        `${API_URL}/api/users/${userId}`,
         { avatarId, avatarUrl },
         {
           headers: {
@@ -73,7 +74,7 @@ const UpoloadAvatar = ({
 
       const {
         data: [{ id, url }],
-      } = await axios.post(`http://localhost:1337/api/upload`, files, {
+      } = await axios.post(`${API_URL}/api/upload`, files, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `bearer ${token}`,
