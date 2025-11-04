@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 export const useDashboard = (token) => {
   const [profile, setProfile] = useState(null);
@@ -11,12 +11,8 @@ export const useDashboard = (token) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fungsi untuk mengambil data profile pengguna
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem("jwt");
-      console.log("Token JWT:", token); // Periksa token yang digunakan
-
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
@@ -24,67 +20,108 @@ export const useDashboard = (token) => {
         `${API_URL}/api/users/me`,
         config
       );
-
-      console.log("Response:", response.data); // Cek respons dari server
-
-      if (response.status === 200) {
-        setProfile(response.data);
-      } else {
-        setError("Failed to fetch user data");
-      }
+      setProfile(data);
     } catch (err) {
-      console.error(err); // Log error
-      setError(err.message);
+      console.error("fetchProfile error:", err);
       setProfile(null);
     }
   };
 
-  // Fungsi untuk mengambil daftar appointments berdasarkan ID user yang sedang login
   const fetchAppointments = async () => {
     try {
-      // upcoming
-      const today = new Date().toISOString();
-      const { data: upcomingData } = await axios.get(
-        `${API_URL}/api/appointments?filters[statusJadwal][$eq]=Scheduled&filters[student][id][$eq]=${userId}&populate[schedule][fields][0]=tanggal&populate[schedule][fields][1]=jam_mulai&populate[schedule][fields][2]=jam_selesai&populate[konselor][fields][0]=username`
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+      
+      // Get current user id first
+      const meRes = await axios.get(
+        `${API_URL}/api/users/me`,
+        config
       );
-      setUpcoming(upcomingData.data || []);
+      const userId = meRes.data?.id || meRes.data?.data?.id;
 
-      const { data: historyData } = await axios.get(
-        `${API_URL}/api/appointments?filters[date][$lt]=${today}&sort=date:DESC&populate=doctor,media`
-      );
-      setHistory(historyData.data || []);
+      if (!userId) {
+        setUpcoming([]);
+        setHistory([]);
+        return;
+      }
+
+      // upcoming appointments - coba tanpa populate dulu jika error
+      try {
+        const { data: upcomingData } = await axios.get(
+          `${API_URL}/api/appointments?filters[statusJadwal][$eq]=Scheduled&filters[student][id][$eq]=${userId}`,
+          config
+        );
+        setUpcoming(upcomingData.data || []);
+      } catch (err) {
+        console.error("fetchUpcoming error:", err);
+        setUpcoming([]);
+      }
+
+      // history appointments
+      try {
+        const { data: historyData } = await axios.get(
+          `${API_URL}/api/appointments?filters[student][id][$eq]=${userId}&filters[statusJadwal][$eq]=Completed`,
+          config
+        );
+        setHistory(historyData.data || []);
+      } catch (err) {
+        console.error("fetchHistory error:", err);
+        setHistory([]);
+      }
     } catch (err) {
-      setError(err.message);
-      // endpoints might not exist yet; keep arrays empty
+      console.error("fetchAppointments error:", err);
       setUpcoming([]);
       setHistory([]);
     }
   };
 
-  // Fungsi untuk mengambil artikel
   const fetchArticles = async () => {
+    const config = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+    
     try {
       const { data } = await axios.get(
-        `${API_URL}/api/articles?populate=image`
+        `${API_URL}/api/articles`,
+        config
       );
-      setArticles(data.data || []);
+      
+      // Filter hanya published articles di client side
+      const allArticles = data.data || [];
+      const publishedArticles = allArticles.filter(article => {
+        // Handle both Strapi v4 and v5 formats
+        // Check di attributes dulu, lalu di root
+        const status = article.attributes?.status || 
+                       article.attributes?.status_article ||
+                       article.status_article || 
+                       article.status;
+        
+        // Case insensitive check
+        return status?.toLowerCase() === "published";
+      });
+      
+      setArticles(publishedArticles);
     } catch (err) {
-      setError(err.message);
+      console.error("fetchArticles error:", err);
       setArticles([]);
     }
   };
 
-  // Hook untuk menjalankan fungsi ketika komponen dimuat
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError(null);
-      await Promise.all([fetchProfile(), fetchAppointments(), fetchArticles()]);
+      await Promise.all([
+        fetchProfile(), 
+        fetchAppointments(), 
+        fetchArticles()
+      ]);
       setLoading(false);
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, profile]); // Re-fetch jika token atau profile berubah
+  }, [token]);
 
   return { profile, upcoming, history, articles, loading, error };
 };

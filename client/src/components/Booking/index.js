@@ -1,11 +1,11 @@
 // src/pages/Booking/index.js
-import React, { useState } from "react";
-import { useSchedules } from "../Schedule/useSchedule"; // Pastikan path ini benar
-import { useAppointments } from "../Booking/useAppointments"; // Pastikan path ini benar
+import React, { useState, useEffect } from "react";
+import { useAppointments } from "./useAppointments";
+import axios from "axios";
 import { toast } from "react-toastify";
-import { userData, Protector } from "../../helpers";
+import { userData } from "../../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const SlotCard = ({ schedule, onBook }) => {
   if (!schedule || !schedule.attributes) {
@@ -47,11 +47,15 @@ const SlotCard = ({ schedule, onBook }) => {
 };
 
 const Booking = () => {
-  const { schedules, loading: loadingSchedules, refresh } = useSchedules();
-  const { createAppointment, loading: bookingLoading } = useAppointments();
+  const { slots, loading: loadingSchedules, fetchSlots } = useAppointments();
   const [busy, setBusy] = useState(false);
 
   const { jwt } = userData();
+
+  useEffect(() => {
+    fetchSlots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ✅ Empty array - hanya jalankan sekali saat mount
 
   const handleBook = async (schedule) => {
     if (!jwt) {
@@ -59,13 +63,8 @@ const Booking = () => {
       return;
     }
 
-    if (!schedule || !schedule.attributes) {
+    if (!schedule || !schedule.id) {
       toast.error("Jadwal tidak valid");
-      return;
-    }
-
-    if (!schedule.attributes.slug) {
-      toast.error("Slug jadwal tidak ditemukan");
       return;
     }
 
@@ -77,25 +76,30 @@ const Booking = () => {
       });
       const userId = meRes.data?.id || meRes.data?.data?.id;
 
-      // update appointment to set student relation and status
+      if (!userId) {
+        toast.error("User ID tidak ditemukan");
+        return;
+      }
+
+      // Create or update appointment
       const payload = {
         data: {
           student: userId,
-          statusJadwal: "booked",
+          schedule: schedule.id,
+          statusJadwal: "Scheduled",
         },
       };
 
-      await axios.put(
-        `${API_URL}/api/appointments/${slot.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${jwt}` } }
-      );
+      await axios.post(`${API_URL}/api/appointments`, payload, {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
 
       toast.success("Booking berhasil!");
-      refresh(); // Refresh schedules list
+      fetchSlots(); // Refresh schedules list
     } catch (err) {
       console.error(err);
-      toast.error(`Booking gagal: ${err.message}`);
+      const msg = err?.response?.data?.error?.message || err.message || "Booking gagal";
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -109,9 +113,9 @@ const Booking = () => {
       <div className="booking-card">
         {loadingSchedules ? (
           <p>Loading...</p>
-        ) : schedules && schedules.length ? (
+        ) : slots && slots.length ? (
           <div className="booking-grid">
-            {schedules.map((s) => (
+            {slots.map((s) => (
               <SlotCard key={s.id} schedule={s} onBook={handleBook} />
             ))}
           </div>
@@ -119,9 +123,7 @@ const Booking = () => {
           <p>Tidak ada slot tersedia</p>
         )}
       </div>
-      {(busy || bookingLoading) && (
-        <div className="booking-busy">Processing...</div>
-      )}
+      {busy && <div className="booking-busy">Processing...</div>}
     </div>
   );
 };

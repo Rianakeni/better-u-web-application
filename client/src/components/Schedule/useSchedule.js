@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+
 export const useSchedules = () => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +11,7 @@ export const useSchedules = () => {
   const fetchSchedules = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:1337/api/schedules?filters[isBooked][$eq]=false&populate=*&sort=tanggal:ASC,jam_mulai:ASC"
+        `${API_URL}/api/schedules?filters[isBooked][$eq]=false&populate=*&sort=tanggal:ASC,jam_mulai:ASC`
       );
 
       // Pastikan response.data dan response.data.data ada

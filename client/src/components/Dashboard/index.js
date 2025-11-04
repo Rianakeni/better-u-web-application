@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useDashboard } from "./useDashboard";
 import { Protector } from "../../helpers";
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const SmallItem = ({ item, type }) => {
   // Ambil data dari appointment
@@ -58,13 +59,36 @@ const SmallItem = ({ item, type }) => {
   );
 };
 
-const Dashboard = () => {
-  const token = localStorage.getItem("jwt"); // Ambil token dari localStorage
+const Dashboard = ({ token }) => {
+  // Gunakan prop token yang sudah dikirim dari App.js
   const { profile, upcoming, history, articles, loading, error } =
     useDashboard(token);
+  
+  // State untuk modal artikel
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Handler untuk membuka modal dengan artikel yang dipilih
+  const handleReadMore = (article) => {
+    setSelectedArticle(article);
+    setIsModalOpen(true);
+  };
+
+  // Handler untuk menutup modal
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+    if (!isModalOpen) {
+      setSelectedArticle(null);
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
+
+  // Handle article data untuk modal
+  const getArticleData = (article) => {
+    return article?.attributes || article || {};
+  };
 
   return (
     <div className="dashboard-layout">
@@ -110,26 +134,41 @@ const Dashboard = () => {
         </section>
 
         <section className="hero-articles">
-          {articles && articles.length ? (
-            <div className="hero-card">
-              <div className="hero-text">
-                <h2>{articles[0].attributes.title}</h2>
-                <p>
-                  {articles[0].attributes.excerpt ||
-                    articles[0].attributes.content ||
-                    ""}
-                </p>
-                <button className="read-more">Read more</button>
-              </div>
-              <div className="hero-image">
-                {articles[0].attributes.image?.data?.attributes?.url ? (
-                  <img
-                    src={`${API_URL}${articles[0].attributes.image.data.attributes.url}`}
-                    alt={articles[0].attributes.title}
-                  />
-                ) : null}
-              </div>
-            </div>
+          {articles && articles.length > 0 ? (
+            // Tampilkan semua artikel yang published
+            articles.map((article) => {
+              // Handle both formats - data di root atau di attributes
+              const articleData = article.attributes || article;
+              
+              return (
+                <div key={article.id || article.documentId} className="hero-card">
+                  <div className="hero-text">
+                    <h2>{articleData.title || article.title || "Untitled"}</h2>
+                    <p>
+                      {articleData.excerpt || article.excerpt || 
+                       articleData.content || article.content || 
+                       ""}
+                    </p>
+                    <button 
+                      className="read-more"
+                      onClick={() => handleReadMore(article)}
+                    >
+                      Read more
+                    </button>
+                  </div>
+                  <div className="hero-image">
+                    {(articleData.image?.data?.attributes?.url || 
+                      article.image?.data?.attributes?.url) ? (
+                      <img
+                        src={`${API_URL}${articleData.image?.data?.attributes?.url || 
+                          article.image?.data?.attributes?.url}`}
+                        alt={articleData.title || article.title || "Article"}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="hero-card placeholder">
               <div className="hero-text">
@@ -149,6 +188,78 @@ const Dashboard = () => {
           )}
         </section>
       </main>
+
+      {/* Modal untuk menampilkan detail artikel */}
+      <Modal isOpen={isModalOpen} toggle={toggleModal} size="lg">
+        <ModalHeader toggle={toggleModal}>
+          {selectedArticle ? (
+            getArticleData(selectedArticle).title || 
+            selectedArticle.title || 
+            "Article"
+          ) : "Article Detail"}
+        </ModalHeader>
+        <ModalBody>
+          {selectedArticle && (
+            <>
+              {/* Author info jika ada */}
+              {(getArticleData(selectedArticle).authorName || 
+                selectedArticle.authorName) && (
+                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem" }}>
+                  By: {getArticleData(selectedArticle).authorName || selectedArticle.authorName}
+                </p>
+              )}
+
+              {/* Image jika ada */}
+              {(getArticleData(selectedArticle).image?.data?.attributes?.url ||
+                selectedArticle.image?.data?.attributes?.url) && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <img
+                    src={`${API_URL}${getArticleData(selectedArticle).image?.data?.attributes?.url ||
+                      selectedArticle.image?.data?.attributes?.url}`}
+                    alt={getArticleData(selectedArticle).title || selectedArticle.title || "Article"}
+                    style={{ width: "100%", borderRadius: "8px" }}
+                  />
+                </div>
+              )}
+
+              {/* Full content */}
+              <div 
+                style={{ 
+                  lineHeight: "1.8", 
+                  fontSize: "1rem",
+                  whiteSpace: "pre-wrap" // Preserve line breaks if content is markdown/text
+                }}
+              >
+                {getArticleData(selectedArticle).content || 
+                 selectedArticle.content || 
+                 getArticleData(selectedArticle).excerpt ||
+                 selectedArticle.excerpt ||
+                 "No content available."}
+              </div>
+
+              {/* Published date jika ada */}
+              {(getArticleData(selectedArticle).publishedAt || 
+                selectedArticle.publishedAt) && (
+                <p style={{ color: "#666", fontSize: "0.85rem", marginTop: "1.5rem" }}>
+                  Published: {new Date(
+                    getArticleData(selectedArticle).publishedAt || 
+                    selectedArticle.publishedAt
+                  ).toLocaleDateString("id-ID", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                  })}
+                </p>
+              )}
+            </>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onClick={toggleModal}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };

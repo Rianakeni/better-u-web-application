@@ -6,7 +6,7 @@ import UpoloadAvatar from "./UploadAvatar";
 const Profile = ({ token }) => {
   const [user, setUser] = useState({});
   const [isUserUpdated, setisUserUpdated] = useState(false);
-  const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+  const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
   useEffect(() => {
     const getProfileData = async () => {

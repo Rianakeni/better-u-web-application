@@ -3,8 +3,9 @@ import { Container, Button, Form, Table } from "react-bootstrap";
 import useArticles from "./useArticles";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { userData } from "../../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const Articles = () => {
   const { articles, loading, error, addArticle, deleteArticle, updateArticle } =
@@ -17,10 +18,15 @@ const Articles = () => {
     // Check if user is a counselor
     const checkRole = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const { jwt } = userData();
+        if (!jwt) {
+          navigate("/login");
+          return;
+        }
+        
         const response = await fetch(`${API_URL}/api/users/me`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${jwt}`,
           },
         });
         const data = await response.json();
@@ -86,21 +92,24 @@ const Articles = () => {
         </thead>
         <tbody>
           {articles.map((article) => (
-            <tr key={article.id}>
-              <td>{article.attributes.title}</td>
+            <tr key={article.id || article.documentId}>
+              <td>
+                {/* Handle both Strapi v4 (attributes) and v5 (direct) formats */}
+                {article.attributes?.title || article.title || "Untitled"}
+              </td>
               <td>
                 <div className="d-flex gap-2">
                   <Button
                     variant="info"
                     size="sm"
-                    onClick={() => navigate(`/articles/edit/${article.id}`)}
+                    onClick={() => navigate(`/articles/edit/${article.id || article.documentId}`)}
                   >
                     edit
                   </Button>
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => deleteArticle(article.id)}
+                    onClick={() => deleteArticle(article.id || article.documentId)}
                   >
                     delete
                   </Button>
@@ -108,12 +117,13 @@ const Articles = () => {
               </td>
               <td>
                 <div className="d-flex gap-2 align-items-center">
-                  {article.attributes.status}
-                  {article.attributes.status === "draft" && (
+                  {/* Handle both formats for status */}
+                  {article.attributes?.status || article.status_article || "draft"}
+                  {(article.attributes?.status === "draft" || article.status_article === "draft") && (
                     <Button
                       variant="success"
                       size="sm"
-                      onClick={() => updateArticle(article.id, "published")}
+                      onClick={() => updateArticle(article.id || article.documentId, "published")}
                     >
                       Publish
                     </Button>

@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { userData } from "../../helpers";
 
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const ArticleManagement = ({ onArticleCreated }) => {
   // State untuk menyimpan input judul artikel
@@ -26,7 +27,7 @@ const ArticleManagement = ({ onArticleCreated }) => {
     try {
       // Mengirim POST request ke Strapi API untuk membuat artikel baru
       await axios.post(
-        "http://localhost:1337/api/articles", // Endpoint Strapi untuk articles collection
+        `${API_URL}/api/articles`, // Endpoint Strapi untuk articles collection
         {
           data: {
             title: title,      // Judul artikel dari state

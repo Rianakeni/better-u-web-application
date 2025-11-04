@@ -20,7 +20,7 @@ const Login = () => {
   };
 
   const handleLogin = async () => {
-    const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+    const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
     const url = `${API_URL}/api/auth/local`;
     try {
       if (user.identifier && user.password) {

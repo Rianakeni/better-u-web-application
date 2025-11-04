@@ -24,7 +24,10 @@ function App() {
         <CustomNav isLoggedIn={isLoggedIn} username={username} />
         <Container>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route
+              path="/"
+              element={<Protector Component={<Dashboard token={jwt} />} />}
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             <Route path="/registration" element={<Registration />} />
