@@ -4,6 +4,7 @@ import { getStrapiClient } from "../../lib/strapiClient";
 
 export const useAppointments = () => {
   const [slots, setSlots] = useState([]);
+  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Gunakan useCallback untuk membuat function stabil
