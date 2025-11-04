@@ -5,16 +5,16 @@ import {
   NavbarToggler,
   NavbarBrand,
   Nav,
-  NavItem,
   NavLink,
   UncontrolledDropdown,
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
 } from "reactstrap";
+import logo from "../../assets/logo.png";
 import { Link } from "react-router-dom";
-import { FaShoppingBasket } from "react-icons/fa";
-const CustomNav = ({ basketItems, isLoggedIn, username }) => {
+import { CgList } from "react-icons/cg";
+const CustomNav = ({ isLoggedIn }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggle = () => setIsOpen(!isOpen);
@@ -30,9 +30,15 @@ const CustomNav = ({ basketItems, isLoggedIn, username }) => {
 
   return (
     <div className="custom-nav">
-      <Navbar color="light" light expand="md" container>
+      <Navbar color="#9bff98" light expand="md" container>
         <NavbarBrand tag={Link} to="/" className="mr-auto">
-          BETTER-U
+          <img
+            src={logo}
+            alt="BETTER-U"
+            height={77} // atur tinggi logo
+            loading="lazy"
+            style={{ display: "block" }}
+          />
         </NavbarBrand>
         <NavbarToggler onClick={toggle} className="mr-2" />
         <Collapse isOpen={isOpen} navbar>
@@ -41,7 +47,7 @@ const CustomNav = ({ basketItems, isLoggedIn, username }) => {
               {isLoggedIn ? (
                 <>
                   <DropdownToggle nav caret>
-                    {username} account
+                    <CgList size={35} />
                   </DropdownToggle>
                   <DropdownMenu end>
                     <DropdownItem>
