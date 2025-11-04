@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Col, Row, Button, FormGroup, Input } from "reactstrap";
+import { FormGroup, Input } from "reactstrap";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
@@ -77,9 +77,6 @@ const Login = () => {
               placeholder="Enter password"
             />
           </FormGroup>
-          {/* <Button color="primary" onClick={handleLogin}>
-            Login
-          </Button> */}
           <button
             style={{
               width: "100%",

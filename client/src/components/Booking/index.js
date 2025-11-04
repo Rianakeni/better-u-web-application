@@ -1,27 +1,23 @@
+// src/pages/Booking/index.js
 import React, { useState } from "react";
-import { useAppointments } from "./useAppointments";
-import axios from "axios";
+import { useSchedules } from "../Schedule/useSchedule"; // Pastikan path ini benar
+import { useAppointments } from "../Booking/useAppointments"; // Pastikan path ini benar
 import { toast } from "react-toastify";
 import { userData, Protector } from "../../helpers";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
 
-const SlotCard = ({ slot, onBook }) => {
-  const attrs = slot.attributes || {};
-  const schedule = attrs.date || {};
-  // if date is a component repeatable, it might be an array
-  const tanggal =
-    schedule.tanggal ||
-    (Array.isArray(schedule) ? schedule[0]?.tanggal : null) ||
-    attrs.date;
-  const jam =
-    schedule.jam ||
-    (Array.isArray(schedule) ? schedule[0]?.jam : null) ||
-    `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+const SlotCard = ({ schedule, onBook }) => {
+  if (!schedule || !schedule.attributes) {
+    return <div className="slot-card">Loading...</div>;
+  }
+
+  const attrs = schedule.attributes;
+  const tanggal = attrs.tanggal;
+  const jam_mulai = attrs.jam_mulai;
+  const jam_selesai = attrs.jam_selesai;
   const konselor =
-    attrs.konselor?.data?.attributes?.username ||
-    attrs.konselor ||
-    "dr. konselor";
+    attrs.konselor?.data?.attributes?.nama || attrs.konselor || "dr. konselor";
 
   return (
     <div className="slot-card">
@@ -36,11 +32,13 @@ const SlotCard = ({ slot, onBook }) => {
               })
             : "Tanggal"}
         </div>
-        <div className="slot-time">{jam}</div>
+        <div className="slot-time">
+          {jam_mulai} - {jam_selesai}
+        </div>
         <div className="slot-doctor">{konselor}</div>
       </div>
       <div className="slot-right">
-        <button className="btn-book" onClick={() => onBook(slot)}>
+        <button className="btn-book" onClick={() => onBook(schedule)}>
           Booking
         </button>
       </div>
@@ -49,14 +47,25 @@ const SlotCard = ({ slot, onBook }) => {
 };
 
 const Booking = () => {
-  const { slots, loading, refresh } = useAppointments();
+  const { schedules, loading: loadingSchedules, refresh } = useSchedules();
+  const { createAppointment, loading: bookingLoading } = useAppointments();
   const [busy, setBusy] = useState(false);
 
   const { jwt } = userData();
 
-  const handleBook = async (slot) => {
+  const handleBook = async (schedule) => {
     if (!jwt) {
       toast.error("Silakan login terlebih dahulu");
+      return;
+    }
+
+    if (!schedule || !schedule.attributes) {
+      toast.error("Jadwal tidak valid");
+      return;
+    }
+
+    if (!schedule.attributes.slug) {
+      toast.error("Slug jadwal tidak ditemukan");
       return;
     }
 
@@ -82,13 +91,11 @@ const Booking = () => {
         { headers: { Authorization: `Bearer ${jwt}` } }
       );
 
-      toast.success("Booking berhasil");
-      refresh();
+      toast.success("Booking berhasil!");
+      refresh(); // Refresh schedules list
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.error?.message || err.message || "Booking gagal";
-      toast.error(msg);
+      toast.error(`Booking gagal: ${err.message}`);
     } finally {
       setBusy(false);
     }
@@ -100,23 +107,23 @@ const Booking = () => {
       <p>Pilih dari slot waktu yang tersedia di bawah ini</p>
 
       <div className="booking-card">
-        {loading ? (
+        {loadingSchedules ? (
           <p>Loading...</p>
-        ) : slots && slots.length ? (
+        ) : schedules && schedules.length ? (
           <div className="booking-grid">
-            {slots.map((s) => (
-              <SlotCard key={s.id} slot={s} onBook={handleBook} />
+            {schedules.map((s) => (
+              <SlotCard key={s.id} schedule={s} onBook={handleBook} />
             ))}
           </div>
         ) : (
           <p>Tidak ada slot tersedia</p>
         )}
       </div>
-      {busy && <div className="booking-busy">Processing...</div>}
+      {(busy || bookingLoading) && (
+        <div className="booking-busy">Processing...</div>
+      )}
     </div>
   );
 };
 
-export default Protector
-  ? (props) => <Protector Component={<Booking {...props} />} />
-  : Booking;
+export default Booking;

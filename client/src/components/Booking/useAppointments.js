@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+// src/hooks/useAppointments.js
+import { useState } from "react";
 import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
 
 export const useAppointments = () => {
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const fetchSlots = async () => {
     try {
@@ -24,16 +24,11 @@ export const useAppointments = () => {
       });
       setSlots(available);
     } catch (err) {
-      console.error("fetchSlots", err);
-      setSlots([]);
+      throw new Error(err.response?.data?.error?.message || err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSlots();
-  }, []);
-
-  return { slots, loading, refresh: fetchSlots };
+  return { createAppointment, loading };
 };

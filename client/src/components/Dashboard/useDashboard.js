@@ -9,9 +9,14 @@ export const useDashboard = (token) => {
   const [history, setHistory] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fungsi untuk mengambil data profile pengguna
   const fetchProfile = async () => {
     try {
+      const token = localStorage.getItem("jwt");
+      console.log("Token JWT:", token); // Periksa token yang digunakan
+
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
@@ -19,13 +24,22 @@ export const useDashboard = (token) => {
         `${API_URL}/api/users/me`,
         config
       );
-      setProfile(data);
+
+      console.log("Response:", response.data); // Cek respons dari server
+
+      if (response.status === 200) {
+        setProfile(response.data);
+      } else {
+        setError("Failed to fetch user data");
+      }
     } catch (err) {
-      // silent; user might be anonymous
+      console.error(err); // Log error
+      setError(err.message);
       setProfile(null);
     }
   };
 
+  // Fungsi untuk mengambil daftar appointments berdasarkan ID user yang sedang login
   const fetchAppointments = async () => {
     try {
       // upcoming
@@ -40,12 +54,14 @@ export const useDashboard = (token) => {
       );
       setHistory(historyData.data || []);
     } catch (err) {
+      setError(err.message);
       // endpoints might not exist yet; keep arrays empty
       setUpcoming([]);
       setHistory([]);
     }
   };
 
+  // Fungsi untuk mengambil artikel
   const fetchArticles = async () => {
     try {
       const { data } = await axios.get(
@@ -53,19 +69,22 @@ export const useDashboard = (token) => {
       );
       setArticles(data.data || []);
     } catch (err) {
+      setError(err.message);
       setArticles([]);
     }
   };
 
+  // Hook untuk menjalankan fungsi ketika komponen dimuat
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setError(null);
       await Promise.all([fetchProfile(), fetchAppointments(), fetchArticles()]);
       setLoading(false);
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, profile]); // Re-fetch jika token atau profile berubah
 
-  return { profile, upcoming, history, articles, loading };
+  return { profile, upcoming, history, articles, loading, error };
 };

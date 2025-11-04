@@ -65,6 +65,11 @@ const CustomNav = ({ basketItems, isLoggedIn, username }) => {
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
+                      <NavLink tag={Link} to="/articles">
+                        Articles
+                      </NavLink>
+                    </DropdownItem>
+                    <DropdownItem>
                       <NavLink tag={Link} to="/profile">
                         Profil
                       </NavLink>
