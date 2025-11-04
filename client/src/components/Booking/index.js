@@ -1,11 +1,14 @@
 // src/pages/Booking/index.js
 import React, { useState } from "react";
 import { useSchedules } from "../Schedule/useSchedule"; // Pastikan path ini benar
+import axios from "axios";
 import { useAppointments } from "../Booking/useAppointments"; // Pastikan path ini benar
 import { toast } from "react-toastify";
 import { userData, Protector } from "../../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://ethical-benefit-bb8bd25123.strapiapp.com";
 
 const SlotCard = ({ schedule, onBook }) => {
   if (!schedule || !schedule.attributes) {
@@ -85,14 +88,12 @@ const Booking = () => {
         },
       };
 
-      await axios.put(
-        `${API_URL}/api/appointments/${slot.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${jwt}` } }
-      );
+      await axios.put(`${API_URL}/api/schedules/${schedule.id}`, payload, {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
 
       toast.success("Booking berhasil!");
-      refresh(); // Refresh schedules list
+      refresh(); // Refresh schedules list to remove the booked slot
     } catch (err) {
       console.error(err);
       toast.error(`Booking gagal: ${err.message}`);

@@ -47,5 +47,5 @@ export const Protector = ({ Component }) => {
   }, [navigate, jwt]);
 
   // Render komponen yang dilindungi jika pengguna terautentikasi
-  // return jwt ? Component : null;
+  return jwt ? Component : null;
 };

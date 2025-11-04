@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ethical-benefit-bb8bd25123.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://ethical-benefit-bb8bd25123.strapiapp.com";
 
 export const useDashboard = (token) => {
   const [profile, setProfile] = useState(null);
@@ -20,15 +22,12 @@ export const useDashboard = (token) => {
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
-      const { data } = await axios.get(
-        `${API_URL}/api/users/me`,
-        config
-      );
+      const { data } = await axios.get(`${API_URL}/api/users/me`, config);
 
-      console.log("Response:", response.data); // Cek respons dari server
+      console.log("Response:", data); // Cek respons dari server
 
-      if (response.status === 200) {
-        setProfile(response.data);
+      if (data) {
+        setProfile(data); // Use the correct variable `data` here
       } else {
         setError("Failed to fetch user data");
       }
@@ -42,13 +41,18 @@ export const useDashboard = (token) => {
   // Fungsi untuk mengambil daftar appointments berdasarkan ID user yang sedang login
   const fetchAppointments = async () => {
     try {
-      // upcoming
+      if (!profile) return; // Don't fetch appointments if profile is not loaded
+
+      const userId = profile.id; // Get userId from profile state
       const today = new Date().toISOString();
+
+      // upcoming appointments
       const { data: upcomingData } = await axios.get(
         `${API_URL}/api/appointments?filters[statusJadwal][$eq]=Scheduled&filters[student][id][$eq]=${userId}&populate[schedule][fields][0]=tanggal&populate[schedule][fields][1]=jam_mulai&populate[schedule][fields][2]=jam_selesai&populate[konselor][fields][0]=username`
       );
       setUpcoming(upcomingData.data || []);
 
+      // history appointments
       const { data: historyData } = await axios.get(
         `${API_URL}/api/appointments?filters[date][$lt]=${today}&sort=date:DESC&populate=doctor,media`
       );
