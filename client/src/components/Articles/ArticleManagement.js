@@ -1,19 +1,13 @@
 import React, { useState } from "react";
 import { Button, FormGroup, Input, Label } from "reactstrap";
-import axios from "axios";
 import { toast } from "react-toastify";
-import { userData } from "../../helpers";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient } from "../../lib/strapiClient";
 
 const ArticleManagement = ({ onArticleCreated }) => {
   // State untuk menyimpan input judul artikel
   const [title, setTitle] = useState("");
   // State untuk menyimpan input konten artikel
   const [content, setContent] = useState("");
-  // Mengambil JWT token dari helper userData untuk autentikasi API
-  const { jwt } = userData();
-
 
   const handleSubmit = async (e) => {
     // Mencegah behavior default form submission (page refresh)
@@ -26,22 +20,13 @@ const ArticleManagement = ({ onArticleCreated }) => {
 
     try {
       // Mengirim POST request ke Strapi API untuk membuat artikel baru
-      await axios.post(
-        `${API_URL}/api/articles`, // Endpoint Strapi untuk articles collection
-        {
-          data: {
-            title: title,      // Judul artikel dari state
-            content: content,  // Konten artikel dari state
-            // Note: Strapi V4 membutuhkan format 'data' sebagai wrapper
-          },
+      const client = getStrapiClient();
+      await client.collection('articles').create({
+        data: {
+          title: title,
+          content: content,
         },
-        {
-          // Header untuk autentikasi menggunakan JWT Bearer token
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
+      });
 
       // Tampilkan notifikasi sukses jika artikel berhasil dibuat
       toast.success("Artikel berhasil dibuat!");

@@ -7,18 +7,27 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const SmallItem = ({ item, type }) => {
-  // Ambil data dari appointment
-  const attrs = item.attributes || {};
-  // Ambil data schedule yang direlasikan
-  const schedule = attrs.schedule?.data?.attributes || {};
+  // Strapi v5: data langsung di root, tidak ada attributes wrapper
+  // Support both v4 (with attributes) and v5 (without attributes)
+  const attrs = item.attributes || item || {};
+  
+  // Strapi v5: populate langsung di root, tidak ada .data.attributes
+  // Support both formats (v4: schedule.data.attributes, v5: schedule.data atau schedule)
+  const schedule = attrs.schedule?.data?.attributes || 
+                   attrs.schedule?.data || 
+                   attrs.schedule || 
+                   {};
 
   // Ambil tanggal, jam_mulai, jam_selesai dari schedule
   const tanggal = schedule.tanggal;
   const jam_mulai = schedule.jam_mulai;
   const jam_selesai = schedule.jam_selesai;
-  // Ambil nama konselor
+  
+  // Konselor: support both v4 and v5 format
   const konselor =
     attrs.konselor?.data?.attributes?.username ||
+    attrs.konselor?.data?.username ||
+    attrs.konselor?.username ||
     attrs.konselor ||
     "dr. konselor";
 
@@ -34,6 +43,19 @@ const SmallItem = ({ item, type }) => {
   const timeStr =
     jam_mulai && jam_selesai ? `${jam_mulai} - ${jam_selesai}` : "-";
 
+  // Medical record: support both v4 and v5 format
+  const medicalRecord = attrs.medical_record?.data?.attributes ||
+                        attrs.medical_record?.data ||
+                        attrs.medical_record;
+  
+  // Media/File: support both v4 and v5 format
+  const mediaFile = attrs.media?.data?.[0]?.attributes ||
+                   attrs.media?.data?.[0] ||
+                   attrs.filePDF?.data?.attributes ||
+                   attrs.filePDF?.data ||
+                   medicalRecord?.filePDF?.data?.attributes ||
+                   medicalRecord?.filePDF?.data;
+
   return (
     <div
       className={`dash-item ${type === "upcoming" ? "upcoming" : "history"}`}
@@ -44,10 +66,10 @@ const SmallItem = ({ item, type }) => {
         <div className="dash-item-doctor">{konselor}</div>
       </div>
       <div className="dash-item-right">
-        {type === "history" && attrs.medical_record?.data?.id ? (
+        {type === "history" && (medicalRecord?.id || medicalRecord?.documentId || mediaFile?.url) ? (
           <a
             className="download-btn"
-            href={`${API_URL}${attrs.media.data[0].attributes.url}`}
+            href={`${API_URL}${mediaFile?.url || ''}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -101,7 +123,7 @@ const Dashboard = ({ token }) => {
           </p>
         </header>
 
-        <section className="panels" style={{ background: "#1a5b26ff" }}>
+        <section className="panels">
           <div className="panel schedule-panel">
             <h3>Your Schedule</h3>
             <div className="panel-body">
@@ -157,14 +179,8 @@ const Dashboard = ({ token }) => {
                     </button>
                   </div>
                   <div className="hero-image">
-                    {(articleData.image?.data?.attributes?.url || 
-                      article.image?.data?.attributes?.url) ? (
-                      <img
-                        src={`${API_URL}${articleData.image?.data?.attributes?.url || 
-                          article.image?.data?.attributes?.url}`}
-                        alt={articleData.title || article.title || "Article"}
-                      />
-                    ) : null}
+                    {/* Placeholder image - tidak fetch image dari API */}
+                    <img src="/mental-wellness.png" alt="Article" />
                   </div>
                 </div>
               );
@@ -210,17 +226,35 @@ const Dashboard = ({ token }) => {
               )}
 
               {/* Image jika ada */}
-              {(getArticleData(selectedArticle).image?.data?.attributes?.url ||
-                selectedArticle.image?.data?.attributes?.url) && (
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <img
-                    src={`${API_URL}${getArticleData(selectedArticle).image?.data?.attributes?.url ||
-                      selectedArticle.image?.data?.attributes?.url}`}
-                    alt={getArticleData(selectedArticle).title || selectedArticle.title || "Article"}
-                    style={{ width: "100%", borderRadius: "8px" }}
-                  />
-                </div>
-              )}
+              {(() => {
+                // Helper untuk mendapatkan coverimage dari article
+                const getCoverimage = (article) => {
+                  return article?.coverimage || 
+                         article?.attributes?.coverimage ||
+                         getArticleData(article).coverimage;
+                };
+                
+                const coverimage = getCoverimage(selectedArticle);
+                let imageUrl = null;
+                
+                if (coverimage?.data?.attributes?.url) {
+                  imageUrl = `${API_URL}${coverimage.data.attributes.url}`;
+                } else if (coverimage?.attributes?.url) {
+                  imageUrl = `${API_URL}${coverimage.attributes.url}`;
+                } else if (coverimage?.url) {
+                  imageUrl = coverimage.url.startsWith('http') ? coverimage.url : `${API_URL}${coverimage.url}`;
+                }
+                
+                return imageUrl ? (
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <img
+                      src={imageUrl}
+                      alt={getArticleData(selectedArticle).title || selectedArticle.title || "Article"}
+                      style={{ width: "100%", borderRadius: "8px" }}
+                    />
+                  </div>
+                ) : null;
+              })()}
 
               {/* Full content */}
               <div 

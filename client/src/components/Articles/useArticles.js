@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { userData } from "../../helpers";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient, strapiAxios } from "../../lib/strapiClient";
 
 const useArticles = () => {
   const [articles, setArticles] = useState([]);
@@ -14,20 +11,14 @@ const useArticles = () => {
   // Fetch articles
   const fetchArticles = async () => {
     try {
-      const { jwt } = userData();
-      const response = await axios.get(`${API_URL}/api/articles`, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
+      // Gunakan axios langsung untuk articles dengan publicationState
+      const { data: articlesData } = await strapiAxios.get('/articles?publicationState=live');
       
       // Normalize data - handle both Strapi v4 and v5 formats
-      const normalizedArticles = (response.data.data || []).map(article => {
-        // If already has attributes (v4), return as is
+      const normalizedArticles = (articlesData?.data || []).map(article => {
         if (article.attributes) {
           return article;
         }
-        // If direct format (v5), wrap in attributes for consistency
         return {
           id: article.id || article.documentId,
           attributes: {
@@ -55,22 +46,14 @@ const useArticles = () => {
   // Add new article
   const addArticle = async (title) => {
     try {
-      const { jwt } = userData();
-      await axios.post(
-        `${API_URL}/api/articles`,
-        {
-          data: {
-            title,
-            status: "draft",
-          },
+      const client = getStrapiClient();
+      await client.collection('articles').create({
+        data: {
+          title,
+          status: "draft",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
-      fetchArticles(); // Refresh the list
+      });
+      fetchArticles();
     } catch (err) {
       setError(err.message);
     }
@@ -79,13 +62,9 @@ const useArticles = () => {
   // Delete article
   const deleteArticle = async (id) => {
     try {
-      const { jwt } = userData();
-      await axios.delete(`${API_URL}/api/articles/${id}`, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
-      fetchArticles(); // Refresh the list
+      const client = getStrapiClient();
+      await client.collection('articles').delete(id);
+      fetchArticles();
     } catch (err) {
       setError(err.message);
     }
@@ -94,21 +73,11 @@ const useArticles = () => {
   // Update article
   const updateArticle = async (id, status) => {
     try {
-      const { jwt } = userData();
-      await axios.put(
-        `${API_URL}/api/articles/${id}`,
-        {
-          data: {
-            status,
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
-      fetchArticles(); // Refresh the list
+      const client = getStrapiClient();
+      await client.collection('articles').update(id, {
+        data: { status },
+      });
+      fetchArticles();
     } catch (err) {
       setError(err.message);
     }

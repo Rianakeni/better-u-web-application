@@ -1,8 +1,6 @@
 // src/hooks/useSchedules.js
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient } from "../../lib/strapiClient";
 
 export const useSchedules = () => {
   const [schedules, setSchedules] = useState([]);
@@ -10,16 +8,22 @@ export const useSchedules = () => {
 
   const fetchSchedules = async () => {
     try {
-      const response = await axios.get(
-        `${API_URL}/api/schedules?filters[isBooked][$eq]=false&populate=*&sort=tanggal:ASC,jam_mulai:ASC`
-      );
+      const client = getStrapiClient();
+      const schedulesData = await client.collection('schedules').find({
+        filters: {
+          isBooked: {
+            $eq: false
+          }
+        },
+        populate: '*',
+        sort: ['tanggal:asc', 'jam_mulai:asc']
+      });
 
-      // Pastikan response.data dan response.data.data ada
-      if (!response.data || !Array.isArray(response.data.data)) {
+      if (!Array.isArray(schedulesData.data)) {
         throw new Error("Invalid response format");
       }
 
-      setSchedules(response.data.data);
+      setSchedules(schedulesData.data);
     } catch (err) {
       console.error("Error fetching schedules:", err);
       setSchedules([]);

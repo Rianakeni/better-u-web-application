@@ -1,11 +1,9 @@
 // src/pages/Booking/index.js
 import React, { useState, useEffect } from "react";
 import { useAppointments } from "./useAppointments";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { userData } from "../../helpers";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient, getCurrentUserId } from "../../lib/strapiClient";
 
 const SlotCard = ({ schedule, onBook }) => {
   if (!schedule || !schedule.attributes) {
@@ -70,32 +68,24 @@ const Booking = () => {
 
     setBusy(true);
     try {
-      // get current user id
-      const meRes = await axios.get(`${API_URL}/api/users/me`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      const userId = meRes.data?.id || meRes.data?.data?.id;
+      const userId = await getCurrentUserId();
 
       if (!userId) {
         toast.error("User ID tidak ditemukan");
         return;
       }
 
-      // Create or update appointment
-      const payload = {
+      const client = getStrapiClient();
+      await client.collection('appointments').create({
         data: {
           student: userId,
           schedule: schedule.id,
-          statusJadwal: "Scheduled",
+          statusJadwal: "Scheduled ", // Dengan spasi di akhir sesuai format database
         },
-      };
-
-      await axios.post(`${API_URL}/api/appointments`, payload, {
-        headers: { Authorization: `Bearer ${jwt}` },
       });
 
       toast.success("Booking berhasil!");
-      fetchSlots(); // Refresh schedules list
+      fetchSlots();
     } catch (err) {
       console.error(err);
       const msg = err?.response?.data?.error?.message || err.message || "Booking gagal";

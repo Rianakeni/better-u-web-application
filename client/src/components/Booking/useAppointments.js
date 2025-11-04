@@ -1,8 +1,6 @@
 // src/hooks/useAppointments.js
 import { useState, useCallback } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient } from "../../lib/strapiClient";
 
 export const useAppointments = () => {
   const [slots, setSlots] = useState([]);
@@ -12,25 +10,22 @@ export const useAppointments = () => {
   const fetchSlots = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${API_URL}/api/schedules?populate=*`
-      );
-      const all = data.data || [];
+      const client = getStrapiClient();
+      const schedulesData = await client.collection('schedules').find({
+        populate: '*',
+        sort: ['tanggal:asc', 'jam_mulai:asc']
+      });
       
-      // Safe filtering dengan null checks
+      const all = schedulesData.data || [];
+      
+      // Filter available slots (no student relation)
       const available = all.filter((a) => {
-        // Handle jika item tidak punya attributes
         if (!a || !a.attributes) return false;
         
         const student = a.attributes.student;
-        
-        // Consider slot available if it has no student relation
         if (!student) return true;
-        
-        // Handle nested student structure
         if (student.data === null || student.data === undefined) return true;
         
-        // Jika student ada data, berarti sudah dibooking
         return false;
       });
       
@@ -41,7 +36,7 @@ export const useAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array - function tidak akan berubah
+  }, []);
 
   return { slots, loading, fetchSlots };
 };

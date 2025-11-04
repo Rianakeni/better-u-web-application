@@ -1,8 +1,8 @@
-import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Col, Row, Button, FormGroup, Input } from "reactstrap";
+import { register } from "../../lib/strapiClient";
 
 // Inisialisasi state user dengan data kosong
 const initialUser = { email: "", password: "", username: "", phonenumber: "" };
@@ -52,21 +52,16 @@ const Registration = () => {
         return;
       }
 
-      // URL API untuk registrasi
-      const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
-      const url = `${API_URL}/api/auth/local/register`;
-
       // Kirim data ke API
-      // Pastikan backend Strapi Anda sudah di-custom untuk menerima 'phonenumber'
-      const res = await axios.post(url, {
+      const res = await register({
         username: user.username,
         email: user.email,
         password: user.password,
-        phonenumber: user.phonenumber, // Mengirim field kustom
+        phonenumber: user.phonenumber,
       });
 
       // Cek apakah request berhasil
-      if (res.status === 200) {
+      if (res.jwt) {
         toast.success("Registered successfully!", { hideProgressBar: true });
         setUser(initialUser);
         navigate("/login");

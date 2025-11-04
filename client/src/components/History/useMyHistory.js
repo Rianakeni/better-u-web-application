@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { fetchCurrentUser, fetchWithQuery } from "../../lib/strapiClient";
 
 export const useMyHistory = (token) => {
   const [history, setHistory] = useState([]);
@@ -10,27 +8,27 @@ export const useMyHistory = (token) => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-      const meRes = await axios.get(
-        `${API_URL}/api/users/me`,
-        config
-      );
-      const userId = meRes.data?.id || meRes.data?.data?.id;
+      if (!token) {
+        setHistory([]);
+        return;
+      }
+
+      const user = await fetchCurrentUser();
+      const userId = user?.id || user?.data?.id;
 
       if (!userId) {
         setHistory([]);
         return;
       }
 
-      // filter completed appointments for this user
-      const res = await axios.get(
-        `${API_URL}/api/appointments?filters[student][id]=${userId}&filters[statusJadwal]=Completed&populate=schedule.schedule,konselor,medical_record&sort=date:DESC`,
-        config
-      );
+              const historyData = await fetchWithQuery('/appointments', {
+                'filters[student][id]': userId,
+                'filters[statusJadwal]': 'Completed',
+                populate: ['schedule', 'konselor', 'medical_record'],
+                sort: 'id:DESC'
+              });
 
-      setHistory(res.data?.data || []);
+      setHistory(historyData.data || []);
     } catch (err) {
       console.error("fetchHistory", err);
       setHistory([]);

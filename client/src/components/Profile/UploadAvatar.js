@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -12,6 +11,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from "reactstrap";
+import { uploadFile, updateUser } from "../../lib/strapiClient";
 
 const UpoloadAvatar = ({
   userId,
@@ -20,7 +20,6 @@ const UpoloadAvatar = ({
   avatarUrl,
   setisUserUpdated,
 }) => {
-  const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
   const [modal, setModal] = useState(false);
   const [file, setFile] = useState(null);
 
@@ -41,24 +40,6 @@ const UpoloadAvatar = ({
     }
   };
 
-  const upateUserAvatarId = async (avatarId, avatarUrl) => {
-    try {
-      await axios.put(
-        `${API_URL}/api/users/${userId}`,
-        { avatarId, avatarUrl },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `bearer ${token}`,
-          },
-        }
-      );
-      setisUserUpdated(true);
-    } catch (error) {
-      console.log({ error });
-    }
-  };
-
   const handleSubmit = async () => {
     if (!file) {
       toast.error("File is required*", {
@@ -68,23 +49,19 @@ const UpoloadAvatar = ({
     }
 
     try {
-      const files = new FormData();
-      files.append("files", file);
-      files.append("name", `${username} avatar`);
-
-      const {
-        data: [{ id, url }],
-      } = await axios.post(`${API_URL}/api/upload`, files, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `bearer ${token}`,
-        },
-      });
-      upateUserAvatarId(id, url);
+      const uploadedFiles = await uploadFile(file, `${username} avatar`);
+      const [{ id, url }] = uploadedFiles;
+      
+      await updateUser(userId, { avatarId: id, avatarUrl: url });
+      
+      setisUserUpdated(true);
       setFile(null);
       setModal(false);
     } catch (error) {
       console.log({ error });
+      toast.error("Failed to upload avatar", {
+        hideProgressBar: true,
+      });
     }
   };
 

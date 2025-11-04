@@ -1,21 +1,18 @@
-import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import UpoloadAvatar from "./UploadAvatar";
+import { fetchCurrentUser } from "../../lib/strapiClient";
+
+const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const Profile = ({ token }) => {
   const [user, setUser] = useState({});
   const [isUserUpdated, setisUserUpdated] = useState(false);
-  const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
   useEffect(() => {
     const getProfileData = async () => {
       try {
-        const { data } = await axios.get(`${API_URL}/api/users/me`, {
-          headers: {
-            Authorization: `bearer ${token}`,
-          },
-        });
+        const data = await fetchCurrentUser();
         setUser(data);
         setisUserUpdated(false);
       } catch (error) {

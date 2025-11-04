@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { FormGroup, Input } from "reactstrap";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import { storeUser } from "../../helpers";
+import { login } from "../../lib/strapiClient";
 
 const initialUser = { password: "", identifier: "" };
 
@@ -20,11 +20,9 @@ const Login = () => {
   };
 
   const handleLogin = async () => {
-    const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
-    const url = `${API_URL}/api/auth/local`;
     try {
       if (user.identifier && user.password) {
-        const { data } = await axios.post(url, user);
+        const data = await login(user.identifier, user.password);
         if (data.jwt) {
           storeUser(data);
           toast.success("Logged in successfully!", {

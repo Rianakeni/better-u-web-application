@@ -1,5 +1,6 @@
 // MedicalRecordDetail.jsx
 import { useState } from "react";
+import { getStrapiClient, strapiAxios } from "../../lib/strapiClient";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
@@ -9,20 +10,29 @@ function MedicalRecordDetail({ id }) {
 
   // misal ini dipanggil di useEffect buat ambil data awal
   async function fetchRecord() {
-    const res = await fetch(
-      `${API_URL}/api/medical-records/${id}?populate[filePDF]=true`
-    );
-    const json = await res.json();
-    setRecord(json.data);
+    try {
+      const client = getStrapiClient();
+      const recordData = await client.collection('medical-records').findOne(id, {
+        populate: {
+          filePDF: true
+        }
+      });
+      setRecord(recordData.data);
+    } catch (error) {
+      console.error("Error fetching record:", error);
+    }
   }
 
   async function handleGeneratePdf() {
     setLoading(true);
-    await fetch(`${API_URL}/api/medical-records/${id}/generate-pdf`, {
-      method: "POST", // atau GET, terserah kamu bikin di Strapi
-    });
-    await fetchRecord(); // refresh supaya field filePDF keisi
-    setLoading(false);
+    try {
+      await strapiAxios.post(`/medical-records/${id}/generate-pdf`);
+      await fetchRecord();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

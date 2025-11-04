@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import { getStrapiClient } from "../../lib/strapiClient";
 
 const MedicalRecords = () => {
   const [records, setRecords] = useState([]);
@@ -16,23 +14,27 @@ const MedicalRecords = () => {
 
   // Fetch all medical records
   useEffect(() => {
-    // Get all medical records
-    axios
-      .get(
-        `${API_URL}/api/medical-records?populate[appointment]=true`
-      )
-      .then((response) => {
-        setRecords(response.data.data);
-      })
-      .catch((error) => console.error("Error fetching records: ", error));
+    const fetchData = async () => {
+      try {
+        const client = getStrapiClient();
+        
+        // Get all medical records
+        const recordsData = await client.collection('medical-records').find({
+          populate: {
+            appointment: true
+          }
+        });
+        setRecords(recordsData.data || []);
 
-    // Get all available appointments
-    axios
-      .get(`${API_URL}/api/appointments`)
-      .then((response) => {
-        setAppointments(response.data.data);
-      })
-      .catch((error) => console.error("Error fetching appointments: ", error));
+        // Get all appointments
+        const appointmentsData = await client.collection('appointments').find();
+        setAppointments(appointmentsData.data || []);
+      } catch (error) {
+        console.error("Error fetching data: ", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Handle input changes (support checkbox)
@@ -45,39 +47,42 @@ const MedicalRecords = () => {
   };
 
   // Handle form submission to create a new record
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    axios
-      .post(`${API_URL}/api/medical-records`, {
+    try {
+      const client = getStrapiClient();
+      const response = await client.collection('medical-records').create({
         data: {
           permasalahan: newRecord.permasalahan,
           diagnosa: newRecord.diagnosa,
           rekomendasi: newRecord.rekomendasi,
           isFilled: newRecord.isFilled,
-          appointment: newRecord.appointment, // Choose the related appointment
+          appointment: newRecord.appointment,
         },
-      })
-      .then((response) => {
-        setRecords([...records, response.data.data]);
-        setNewRecord({
-          permasalahan: "",
-          diagnosa: "",
-          rekomendasi: "",
-          isFilled: false,
-          appointment: "", // Reset after successful submission
-        });
-      })
-      .catch((error) => console.error("Error creating record: ", error));
+      });
+
+      setRecords([...records, response.data]);
+      setNewRecord({
+        permasalahan: "",
+        diagnosa: "",
+        rekomendasi: "",
+        isFilled: false,
+        appointment: "",
+      });
+    } catch (error) {
+      console.error("Error creating record: ", error);
+    }
   };
 
   // Handle delete record
-  const handleDelete = (id) => {
-    axios
-      .delete(`${API_URL}/api/medical-records/${id}`)
-      .then((response) => {
-        setRecords(records.filter((record) => record.id !== id));
-      })
-      .catch((error) => console.error("Error deleting record: ", error));
+  const handleDelete = async (id) => {
+    try {
+      const client = getStrapiClient();
+      await client.collection('medical-records').delete(id);
+      setRecords(records.filter((record) => record.id !== id));
+    } catch (error) {
+      console.error("Error deleting record: ", error);
+    }
   };
 
   return (
