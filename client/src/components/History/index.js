@@ -2,6 +2,7 @@ import React from "react";
 import { useMyHistory } from "./useMyHistory";
 import { Protector } from "../../helpers";
 import ReactLoading from "react-loading";
+import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
@@ -67,32 +68,33 @@ const HistoryCard = ({ item }) => {
     medicalRecord?.filePDF?.url;
 
   return (
-    <div className="history-item">
-      <div className="history-left">
-        <div className="history-date">
-          {tanggal
-            ? new Date(tanggal).toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-            : "-"}
+    <div className="scheduled-card">
+      <div className="dash-item history">
+        <div className="dash-item-left">
+          <div className="dash-row dash-date">
+            <FaCalendarAlt className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">
+              {tanggal
+                ? new Date(tanggal).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "-"}
+            </span>
+          </div>
+
+          <div className="dash-row dash-time">
+            <FaClock className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">{jam}</span>
+          </div>
+
+          <div className="dash-row dash-doctor">
+            <FaUserMd className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">{konselor}</span>
+          </div>
         </div>
-        <div className="history-time">{jam}</div>
-        <div className="history-doctor">{konselor}</div>
-      </div>
-      <div className="history-right">
-        {fileUrl && medicalRecord ? (
-          <a
-            className="download-btn"
-            href={`${API_URL}${fileUrl}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            download rekam medis
-          </a>
-        ) : null}
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export const useMyHistory = (token) => {
           fetchWithQuery("/appointments", {
             "filters[student][id]": userId,
             "filters[statusJadwal]": "Completed",
-            populate: ["schedule", "konselor", "medical_record"],
+            populate: ["schedule", "konselor"],
             sort: "id:DESC",
           }).catch(() => ({ data: [] })),
 
@@ -40,7 +40,7 @@ export const useMyHistory = (token) => {
           fetchWithQuery("/appointments", {
             "filters[student][id]": userId,
             "filters[statusJadwal]": "Scheduled ", // Dengan spasi di akhir
-            populate: ["schedule", "konselor", "medical_record"],
+            populate: ["schedule", "konselor"],
             sort: "id:DESC",
           }).catch(() => ({ data: [] })),
         ]);
