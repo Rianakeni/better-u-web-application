@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { useDashboard } from "./useDashboard";
 import { Protector } from "../../helpers";
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
 
 const API_URL =
@@ -47,21 +45,6 @@ const SmallItem = ({ item, type }) => {
   const timeStr =
     jam_mulai && jam_selesai ? `${jam_mulai} - ${jam_selesai}` : "-";
 
-  // Medical record: support both v4 and v5 format
-  const medicalRecord =
-    attrs.medical_record?.data?.attributes ||
-    attrs.medical_record?.data ||
-    attrs.medical_record;
-
-  // Media/File: support both v4 and v5 format
-  const mediaFile =
-    attrs.media?.data?.[0]?.attributes ||
-    attrs.media?.data?.[0] ||
-    attrs.filePDF?.data?.attributes ||
-    attrs.filePDF?.data ||
-    medicalRecord?.filePDF?.data?.attributes ||
-    medicalRecord?.filePDF?.data;
-
   return (
     <div
       className={`dash-item ${type === "upcoming" ? "upcoming" : "history"}`}
@@ -91,28 +74,18 @@ const Dashboard = ({ token }) => {
   const { profile, upcoming, history, articles, loading, error } =
     useDashboard(token);
 
-  // State untuk modal artikel
-  const [selectedArticle, setSelectedArticle] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // State untuk melacak artikel yang diperluas (expanded)
+  const [expandedArticleId, setExpandedArticleId] = useState(null);
 
-  // Handler untuk membuka modal dengan artikel yang dipilih
-  const handleReadMore = (article) => {
-    setSelectedArticle(article);
-    setIsModalOpen(true);
-  };
-
-  // Handler untuk menutup modal
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-    if (!isModalOpen) {
-      setSelectedArticle(null);
-    }
+  // Handler untuk toggle expand/collapse artikel
+  const handleReadMore = (articleId) => {
+    setExpandedArticleId(expandedArticleId === articleId ? null : articleId);
   };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  // Handle article data untuk modal
+  // Helper untuk mendapatkan data artikel
   const getArticleData = (article) => {
     return article?.attributes || article || {};
   };
@@ -166,12 +139,43 @@ const Dashboard = ({ token }) => {
             articles.map((article) => {
               // Handle both formats - data di root atau di attributes
               const articleData = article.attributes || article;
+              const articleId = article.id || article.documentId;
+              const isExpanded = expandedArticleId === articleId;
+
+              // Helper untuk mendapatkan coverImage dari article
+              const getCoverImage = (article) => {
+                return (
+                  article?.coverImage ||
+                  article?.attributes?.coverImage ||
+                  getArticleData(article).coverImage
+                );
+              };
+
+              const coverImage = getCoverImage(article);
+              let imageUrl = null;
+
+              if (coverImage?.data?.attributes?.url) {
+                imageUrl = `${API_URL}${coverImage.data.attributes.url}`;
+              } else if (coverImage?.data?.url) {
+                imageUrl = `${API_URL}${coverImage.data.url}`;
+              } else if (coverImage?.attributes?.url) {
+                imageUrl = `${API_URL}${coverImage.attributes.url}`;
+              } else if (coverImage?.url) {
+                imageUrl = coverImage.url.startsWith("http")
+                  ? coverImage.url
+                  : `${API_URL}${coverImage.url}`;
+              }
+
+              // Tambahkan cache-busting parameter untuk force refresh gambar
+              // Menggunakan timestamp update article atau timestamp saat ini
+              if (imageUrl) {
+                const updatedAt = article.attributes?.updatedAt || article.updatedAt || Date.now();
+                const separator = imageUrl.includes('?') ? '&' : '?';
+                imageUrl = `${imageUrl}${separator}t=${updatedAt}`;
+              }
 
               return (
-                <div
-                  key={article.id || article.documentId}
-                  className="hero-card"
-                >
+                <div key={articleId} className="hero-card">
                   <div className="hero-text">
                     <h2>{articleData.title || article.title || "Untitled"}</h2>
                     <p>
@@ -183,15 +187,135 @@ const Dashboard = ({ token }) => {
                     </p>
                     <button
                       className="read-more"
-                      onClick={() => handleReadMore(article)}
+                      onClick={() => handleReadMore(articleId)}
                     >
-                      Read more
+                      {isExpanded ? "Read less" : "Read more"}
                     </button>
+
+                    {/* Expandable content section - di dalam card */}
+                    {isExpanded && (
+                      <div
+                        className="article-expanded-content"
+                        style={{
+                          marginTop: "1.5rem",
+                          paddingTop: "1.5rem",
+                          borderTop: "1px solid #dee2e6",
+                        }}
+                      >
+                        {/* Author info jika ada */}
+                        {(getArticleData(article).authorName ||
+                          article.authorName) && (
+                          <p
+                            style={{
+                              color: "#666",
+                              fontSize: "0.9rem",
+                              marginBottom: "1rem",
+                            }}
+                          >
+                            By:{" "}
+                            {getArticleData(article).authorName ||
+                              article.authorName}
+                          </p>
+                        )}
+
+                        {/* Image jika ada */}
+                        {imageUrl && (
+                          <div style={{ marginBottom: "1.5rem" }}>
+                            <img
+                              key={`${articleId}-expanded-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
+                              src={imageUrl}
+                              alt={
+                                getArticleData(article).title ||
+                                article.title ||
+                                "Article"
+                              }
+                              style={{
+                                maxWidth: "600px",
+                                maxHeight: "400px",
+                                width: "auto",
+                                height: "auto",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                                justifyContent: "center",
+                                alignContent: "center",
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Full content */}
+                        <div
+                          style={{
+                            lineHeight: "1.8",
+                            fontSize: "1rem",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {getArticleData(article).content ||
+                            article.content ||
+                            getArticleData(article).excerpt ||
+                            article.excerpt ||
+                            "No content available."}
+                        </div>
+
+                        {/* Published date jika ada */}
+                        {(getArticleData(article).publishedAt ||
+                          article.publishedAt) && (
+                          <p
+                            style={{
+                              color: "#666",
+                              fontSize: "0.85rem",
+                              marginTop: "1.5rem",
+                            }}
+                          >
+                            Published:{" "}
+                            {new Date(
+                              getArticleData(article).publishedAt ||
+                                article.publishedAt
+                            ).toLocaleDateString("id-ID", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="hero-image">
-                    {/* Placeholder image - tidak fetch image dari API */}
-                    <img src="/mental-wellness.png" alt="Article" />
-                  </div>
+                  {/* Sembunyikan gambar ketika expanded (read more diklik) */}
+                  {!isExpanded && (
+                    <div className="hero-image">
+                      {/* Tampilkan gambar dari API jika ada, jika tidak pakai placeholder */}
+                      {imageUrl ? (
+                        <img 
+                          key={`${articleId}-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
+                          src={imageUrl} 
+                          alt={articleData.title || article.title || "Article"}
+                          style={{
+                            maxWidth: "200px",
+                            maxHeight: "200px",
+                            width: "auto",
+                            height: "auto",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      ) : (
+                        <img 
+                          src="/mental-wellness.png" 
+                          alt="Article"
+                          style={{
+                            maxWidth: "200px",
+                            maxHeight: "200px",
+                            width: "auto",
+                            height: "auto",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -214,119 +338,6 @@ const Dashboard = ({ token }) => {
           )}
         </section>
       </main>
-
-      {/* Modal untuk menampilkan detail artikel */}
-      <Modal isOpen={isModalOpen} toggle={toggleModal} size="lg">
-        <ModalHeader toggle={toggleModal}>
-          {selectedArticle
-            ? getArticleData(selectedArticle).title ||
-              selectedArticle.title ||
-              "Article"
-            : "Article Detail"}
-        </ModalHeader>
-        <ModalBody>
-          {selectedArticle && (
-            <>
-              {/* Author info jika ada */}
-              {(getArticleData(selectedArticle).authorName ||
-                selectedArticle.authorName) && (
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "0.9rem",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  By:{" "}
-                  {getArticleData(selectedArticle).authorName ||
-                    selectedArticle.authorName}
-                </p>
-              )}
-
-              {/* Image jika ada */}
-              {(() => {
-                // Helper untuk mendapatkan coverimage dari article
-                const getCoverimage = (article) => {
-                  return (
-                    article?.coverimage ||
-                    article?.attributes?.coverimage ||
-                    getArticleData(article).coverimage
-                  );
-                };
-
-                const coverimage = getCoverimage(selectedArticle);
-                let imageUrl = null;
-
-                if (coverimage?.data?.attributes?.url) {
-                  imageUrl = `${API_URL}${coverimage.data.attributes.url}`;
-                } else if (coverimage?.attributes?.url) {
-                  imageUrl = `${API_URL}${coverimage.attributes.url}`;
-                } else if (coverimage?.url) {
-                  imageUrl = coverimage.url.startsWith("http")
-                    ? coverimage.url
-                    : `${API_URL}${coverimage.url}`;
-                }
-
-                return imageUrl ? (
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <img
-                      src={imageUrl}
-                      alt={
-                        getArticleData(selectedArticle).title ||
-                        selectedArticle.title ||
-                        "Article"
-                      }
-                      style={{ width: "100%", borderRadius: "8px" }}
-                    />
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Full content */}
-              <div
-                style={{
-                  lineHeight: "1.8",
-                  fontSize: "1rem",
-                  whiteSpace: "pre-wrap", // Preserve line breaks if content is markdown/text
-                }}
-              >
-                {getArticleData(selectedArticle).content ||
-                  selectedArticle.content ||
-                  getArticleData(selectedArticle).excerpt ||
-                  selectedArticle.excerpt ||
-                  "No content available."}
-              </div>
-
-              {/* Published date jika ada */}
-              {(getArticleData(selectedArticle).publishedAt ||
-                selectedArticle.publishedAt) && (
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "0.85rem",
-                    marginTop: "1.5rem",
-                  }}
-                >
-                  Published:{" "}
-                  {new Date(
-                    getArticleData(selectedArticle).publishedAt ||
-                      selectedArticle.publishedAt
-                  ).toLocaleDateString("id-ID", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              )}
-            </>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onClick={toggleModal}>
-            Close
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 };

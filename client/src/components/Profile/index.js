@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { IoPersonCircleOutline } from "react-icons/io5";
-import UpoloadAvatar from "./UploadAvatar";
 import { fetchCurrentUser } from "../../lib/strapiClient";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
@@ -54,6 +52,7 @@ const Profile = ({ token }) => {
       }
     };
     getProfileData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isUserUpdated]);
 
   // Handler untuk klik avatar - random avatar baru

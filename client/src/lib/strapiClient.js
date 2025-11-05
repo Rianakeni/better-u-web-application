@@ -1,7 +1,6 @@
 // client/src/lib/strapiClient.js
 import { strapi } from '@strapi/client';
 import axios from 'axios';
-import qs from 'qs';
 import { userData } from '../helpers';
 
 const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
@@ -54,17 +53,13 @@ strapiAxios.interceptors.response.use(
 // Convenience methods untuk custom endpoints
 export const fetchCurrentUser = async () => {
   try {
-    // Try dengan populate avatar (format array untuk Strapi v5)
-    const { data } = await strapiAxios.get('/users/me?populate[0]=avatar');
+    // Strapi v5: /users/me endpoint mungkin tidak support populate avatar
+    // atau field name-nya berbeda. Fetch tanpa populate dulu, jika perlu avatar
+    // bisa di-fetch terpisah atau gunakan populate dengan format yang benar
+    const { data } = await strapiAxios.get('/users/me');
     return data;
-  } catch (populateErr) {
-    // If populate fails, try without populate (fallback)
-    try {
-      const { data } = await strapiAxios.get('/users/me');
-      return data;
-    } catch (noPopulateErr) {
-      throw noPopulateErr;
-    }
+  } catch (err) {
+    throw err;
   }
 };
 

@@ -11,8 +11,9 @@ const useArticles = () => {
   // Fetch articles
   const fetchArticles = async () => {
     try {
-      // Gunakan axios langsung untuk articles dengan publicationState
-      const { data: articlesData } = await strapiAxios.get('/articles?publicationState=live');
+      // Gunakan axios langsung untuk articles dengan publicationState dan populate coverImage
+      // Strapi v5: Populate coverImage dengan format nested
+      const { data: articlesData } = await strapiAxios.get('/articles?publicationState=live&populate[0]=coverImage');
       
       // Normalize data - handle both Strapi v4 and v5 formats
       const normalizedArticles = (articlesData?.data || []).map(article => {
@@ -27,6 +28,7 @@ const useArticles = () => {
             excerpt: article.excerpt,
             content: article.content,
             status: article.status_article || article.status,
+            coverImage: article.coverImage,
             ...article
           }
         };
@@ -85,6 +87,7 @@ const useArticles = () => {
 
   useEffect(() => {
     fetchArticles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
