@@ -169,8 +169,11 @@ const Dashboard = ({ token }) => {
               // Tambahkan cache-busting parameter untuk force refresh gambar
               // Menggunakan timestamp update article atau timestamp saat ini
               if (imageUrl) {
-                const updatedAt = article.attributes?.updatedAt || article.updatedAt || Date.now();
-                const separator = imageUrl.includes('?') ? '&' : '?';
+                const updatedAt =
+                  article.attributes?.updatedAt ||
+                  article.updatedAt ||
+                  Date.now();
+                const separator = imageUrl.includes("?") ? "&" : "?";
                 imageUrl = `${imageUrl}${separator}t=${updatedAt}`;
               }
 
@@ -222,7 +225,11 @@ const Dashboard = ({ token }) => {
                         {imageUrl && (
                           <div style={{ marginBottom: "1.5rem" }}>
                             <img
-                              key={`${articleId}-expanded-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
+                              key={`${articleId}-expanded-${
+                                article.attributes?.updatedAt ||
+                                article.updatedAt ||
+                                Date.now()
+                              }`}
                               src={imageUrl}
                               alt={
                                 getArticleData(article).title ||
@@ -287,9 +294,13 @@ const Dashboard = ({ token }) => {
                     <div className="hero-image">
                       {/* Tampilkan gambar dari API jika ada, jika tidak pakai placeholder */}
                       {imageUrl ? (
-                        <img 
-                          key={`${articleId}-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
-                          src={imageUrl} 
+                        <img
+                          key={`${articleId}-${
+                            article.attributes?.updatedAt ||
+                            article.updatedAt ||
+                            Date.now()
+                          }`}
+                          src={imageUrl}
                           alt={articleData.title || article.title || "Article"}
                           style={{
                             maxWidth: "200px",
@@ -301,8 +312,8 @@ const Dashboard = ({ token }) => {
                           }}
                         />
                       ) : (
-                        <img 
-                          src="/mental-wellness.png" 
+                        <img
+                          src="/mental-wellness.png"
                           alt="Article"
                           style={{
                             maxWidth: "200px",

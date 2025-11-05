@@ -40,16 +40,18 @@ export const useDashboard = (token) => {
       // Strapi v5: Coba populate dengan format yang berbeda untuk memastikan relasi ter-populate
       try {
         // Coba dengan populate=* untuk populate semua relasi terlebih dahulu
-        const upcomingUrl = `/appointments?filters[student][id]=${userId}&filters[statusJadwal]=${encodeURIComponent('Scheduled ')}&populate=*&sort=id:ASC`;
+        const upcomingUrl = `/appointments?filters[student][id]=${userId}&filters[statusJadwal]=${encodeURIComponent(
+          "Scheduled "
+        )}&populate=*&sort=id:ASC`;
         const { data: upcomingData } = await strapiAxios.get(upcomingUrl);
-        
+
         console.log("Upcoming appointments data:", upcomingData);
         setUpcoming(upcomingData.data || []);
       } catch (err) {
         console.error("Error fetching upcoming appointments:", {
           error: err.message || err,
           response: err.response?.data,
-          userId
+          userId,
         });
         setUpcoming([]);
       }
@@ -59,14 +61,14 @@ export const useDashboard = (token) => {
         // Coba dengan populate=* untuk populate semua relasi terlebih dahulu
         const historyUrl = `/appointments?filters[student][id]=${userId}&filters[statusJadwal]=Completed&populate=*&sort=id:DESC`;
         const { data: historyData } = await strapiAxios.get(historyUrl);
-        
+
         console.log("History appointments data:", historyData);
         setHistory(historyData.data || []);
       } catch (err) {
         console.error("Error fetching history appointments:", {
           error: err.message || err,
           response: err.response?.data,
-          userId
+          userId,
         });
         setHistory([]);
       }
@@ -82,10 +84,12 @@ export const useDashboard = (token) => {
       // Strapi v5: Populate coverImage dengan format nested
       // Tambahkan timestamp untuk cache-busting agar gambar terbaru selalu di-fetch
       const timestamp = Date.now();
-      const { data } = await strapiAxios.get(`/articles?publicationState=live&populate[0]=coverImage&_t=${timestamp}`);
+      const { data } = await strapiAxios.get(
+        `/articles?publicationState=live&populate[0]=coverImage&_t=${timestamp}`
+      );
       setArticles(data.data || []);
     } catch (err) {
-      setArticles([]);  
+      setArticles([]);
     }
   };
 
@@ -93,11 +97,7 @@ export const useDashboard = (token) => {
     const load = async () => {
       setLoading(true);
       setError(null);
-      await Promise.all([
-        fetchProfile(), 
-        fetchAppointments(), 
-        fetchArticles()
-      ]);
+      await Promise.all([fetchProfile(), fetchAppointments(), fetchArticles()]);
       setLoading(false);
     };
     load();

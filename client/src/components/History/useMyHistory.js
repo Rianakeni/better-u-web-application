@@ -29,26 +29,26 @@ export const useMyHistory = (token) => {
         // Fetch dua query terpisah untuk Completed dan Scheduled, lalu gabungkan
         const [completedData, scheduledData] = await Promise.all([
           // Fetch Completed appointments
-          fetchWithQuery('/appointments', {
-            'filters[student][id]': userId,
-            'filters[statusJadwal]': 'Completed',
-            populate: ['schedule', 'konselor', 'medical_record'],
-            sort: 'id:DESC'
+          fetchWithQuery("/appointments", {
+            "filters[student][id]": userId,
+            "filters[statusJadwal]": "Completed",
+            populate: ["schedule", "konselor", "medical_record"],
+            sort: "id:DESC",
           }).catch(() => ({ data: [] })),
-          
+
           // Fetch Scheduled appointments (yang baru dibuat dari booking)
-          fetchWithQuery('/appointments', {
-            'filters[student][id]': userId,
-            'filters[statusJadwal]': 'Scheduled ', // Dengan spasi di akhir
-            populate: ['schedule', 'konselor', 'medical_record'],
-            sort: 'id:DESC'
-          }).catch(() => ({ data: [] }))
+          fetchWithQuery("/appointments", {
+            "filters[student][id]": userId,
+            "filters[statusJadwal]": "Scheduled ", // Dengan spasi di akhir
+            populate: ["schedule", "konselor", "medical_record"],
+            sort: "id:DESC",
+          }).catch(() => ({ data: [] })),
         ]);
 
         // Gabungkan dan urutkan berdasarkan id DESC
         const allHistory = [
           ...(completedData.data || []),
-          ...(scheduledData.data || [])
+          ...(scheduledData.data || []),
         ];
 
         // Sort berdasarkan id DESC (yang terbaru di atas)
@@ -60,11 +60,11 @@ export const useMyHistory = (token) => {
 
         setHistory(allHistory);
       } catch (queryErr) {
-        console.error('Error fetching history:', queryErr);
+        console.error("Error fetching history:", queryErr);
         setHistory([]);
       }
     } catch (err) {
-      console.error('Error in fetchHistory:', err);
+      console.error("Error in fetchHistory:", err);
       setHistory([]);
     } finally {
       setLoading(false);

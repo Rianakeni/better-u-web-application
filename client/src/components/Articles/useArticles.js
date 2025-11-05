@@ -13,10 +13,12 @@ const useArticles = () => {
     try {
       // Gunakan axios langsung untuk articles dengan publicationState dan populate coverImage
       // Strapi v5: Populate coverImage dengan format nested
-      const { data: articlesData } = await strapiAxios.get('/articles?publicationState=live&populate[0]=coverImage');
-      
+      const { data: articlesData } = await strapiAxios.get(
+        "/articles?publicationState=live&populate[0]=coverImage"
+      );
+
       // Normalize data - handle both Strapi v4 and v5 formats
-      const normalizedArticles = (articlesData?.data || []).map(article => {
+      const normalizedArticles = (articlesData?.data || []).map((article) => {
         if (article.attributes) {
           return article;
         }
@@ -29,11 +31,11 @@ const useArticles = () => {
             content: article.content,
             status: article.status_article || article.status,
             coverImage: article.coverImage,
-            ...article
-          }
+            ...article,
+          },
         };
       });
-      
+
       setArticles(normalizedArticles);
       setLoading(false);
     } catch (err) {
@@ -49,7 +51,7 @@ const useArticles = () => {
   const addArticle = async (title) => {
     try {
       const client = getStrapiClient();
-      await client.collection('articles').create({
+      await client.collection("articles").create({
         data: {
           title,
           status: "draft",
@@ -65,7 +67,7 @@ const useArticles = () => {
   const deleteArticle = async (id) => {
     try {
       const client = getStrapiClient();
-      await client.collection('articles').delete(id);
+      await client.collection("articles").delete(id);
       fetchArticles();
     } catch (err) {
       setError(err.message);
@@ -76,7 +78,7 @@ const useArticles = () => {
   const updateArticle = async (id, status) => {
     try {
       const client = getStrapiClient();
-      await client.collection('articles').update(id, {
+      await client.collection("articles").update(id, {
         data: { status },
       });
       fetchArticles();

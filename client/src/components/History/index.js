@@ -2,58 +2,68 @@ import React from "react";
 import { useMyHistory } from "./useMyHistory";
 import { Protector } from "../../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const HistoryCard = ({ item }) => {
   // Support both Strapi v4 (attributes) and v5 (direct) formats
   const attrs = item.attributes || item || {};
-  
+
   // Handle schedule - support both v4 and v5 formats
-  const scheduleRel = attrs.schedule?.data?.attributes || 
-                      attrs.schedule?.data || 
-                      attrs.schedule || {};
+  const scheduleRel =
+    attrs.schedule?.data?.attributes ||
+    attrs.schedule?.data ||
+    attrs.schedule ||
+    {};
   const scheduleComp = scheduleRel.schedule ? scheduleRel.schedule[0] : null;
-  
+
   // Get tanggal - try multiple paths
-  const tanggal = scheduleComp?.tanggal || 
-                   scheduleRel?.tanggal || 
-                   attrs.date ||
-                   attrs.tanggal;
-  
+  const tanggal =
+    scheduleComp?.tanggal ||
+    scheduleRel?.tanggal ||
+    attrs.date ||
+    attrs.tanggal;
+
   // Get jam_mulai and jam_selesai
   const jam_mulai = scheduleComp?.jam_mulai || scheduleRel?.jam_mulai;
   const jam_selesai = scheduleComp?.jam_selesai || scheduleRel?.jam_selesai;
-  const jam = jam_mulai && jam_selesai 
-    ? `${jam_mulai} - ${jam_selesai}`
-    : scheduleComp?.jam ||
-      scheduleRel?.jam ||
-      `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
-  
+  const jam =
+    jam_mulai && jam_selesai
+      ? `${jam_mulai} - ${jam_selesai}`
+      : scheduleComp?.jam ||
+        scheduleRel?.jam ||
+        `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+
   // Get konselor - support both v4 and v5 formats
   // Try from schedule.konselor first, then from appointment.konselor
-  const konselorFromSchedule = scheduleRel.konselor?.data?.attributes?.username ||
-                               scheduleRel.konselor?.data?.username ||
-                               scheduleRel.konselor?.username ||
-                               scheduleRel.konselor;
-  
-  const konselor = konselorFromSchedule ||
-                   attrs.konselor?.data?.attributes?.username ||
-                   attrs.konselor?.data?.username ||
-                   attrs.konselor?.username ||
-                   attrs.konselor ||
-                   "dr. konselor";
+  const konselorFromSchedule =
+    scheduleRel.konselor?.data?.attributes?.username ||
+    scheduleRel.konselor?.data?.username ||
+    scheduleRel.konselor?.username ||
+    scheduleRel.konselor;
+
+  const konselor =
+    konselorFromSchedule ||
+    attrs.konselor?.data?.attributes?.username ||
+    attrs.konselor?.data?.username ||
+    attrs.konselor?.username ||
+    attrs.konselor ||
+    "dr. konselor";
 
   // Handle medical_record - support both v4 and v5 formats
-  const medicalRecord = attrs.medical_record?.data?.attributes ||
-                        attrs.medical_record?.data ||
-                        attrs.medical_record;
-  
-  const fileUrl = medicalRecord?.file?.data?.attributes?.url ||
-                  medicalRecord?.file?.data?.url ||
-                  medicalRecord?.file?.url ||
-                  medicalRecord?.filePDF?.data?.attributes?.url ||
-                  medicalRecord?.filePDF?.data?.url ||
-                  medicalRecord?.filePDF?.url;
+  const medicalRecord =
+    attrs.medical_record?.data?.attributes ||
+    attrs.medical_record?.data ||
+    attrs.medical_record;
+
+  const fileUrl =
+    medicalRecord?.file?.data?.attributes?.url ||
+    medicalRecord?.file?.data?.url ||
+    medicalRecord?.file?.url ||
+    medicalRecord?.filePDF?.data?.attributes?.url ||
+    medicalRecord?.filePDF?.data?.url ||
+    medicalRecord?.filePDF?.url;
 
   return (
     <div className="history-item">

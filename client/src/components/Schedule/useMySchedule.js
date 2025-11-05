@@ -21,11 +21,11 @@ export const useMySchedule = (token) => {
         return;
       }
 
-              const appointmentsData = await fetchWithQuery('/appointments', {
-                'filters[student][id]': userId,
-                populate: ['schedule', 'konselor', 'medical_record'],
-                sort: 'id:ASC'
-              });
+      const appointmentsData = await fetchWithQuery("/appointments", {
+        "filters[student][id]": userId,
+        populate: ["schedule", "konselor", "medical_record"],
+        sort: "id:ASC",
+      });
 
       setAppointments(appointmentsData.data || []);
     } catch (err) {

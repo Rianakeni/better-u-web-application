@@ -12,16 +12,16 @@ export const useAppointments = () => {
     try {
       const client = getStrapiClient();
       // Filter hanya yang isBooked: false (belum di-booking)
-      const schedulesData = await client.collection('schedules').find({
+      const schedulesData = await client.collection("schedules").find({
         filters: {
           isBooked: {
-            $eq: false
-          }
+            $eq: false,
+          },
         },
-        populate: '*',
-        sort: ['tanggal:asc', 'jam_mulai:asc']
+        populate: "*",
+        sort: ["tanggal:asc", "jam_mulai:asc"],
       });
-      
+
       const available = schedulesData.data || [];
       setSlots(available);
     } catch (err) {

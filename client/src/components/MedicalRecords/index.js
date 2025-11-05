@@ -17,17 +17,17 @@ const MedicalRecords = () => {
     const fetchData = async () => {
       try {
         const client = getStrapiClient();
-        
+
         // Get all medical records
-        const recordsData = await client.collection('medical-records').find({
+        const recordsData = await client.collection("medical-records").find({
           populate: {
-            appointment: true
-          }
+            appointment: true,
+          },
         });
         setRecords(recordsData.data || []);
 
         // Get all appointments
-        const appointmentsData = await client.collection('appointments').find();
+        const appointmentsData = await client.collection("appointments").find();
         setAppointments(appointmentsData.data || []);
       } catch (error) {
         // Error handled silently
@@ -51,7 +51,7 @@ const MedicalRecords = () => {
     e.preventDefault();
     try {
       const client = getStrapiClient();
-      const response = await client.collection('medical-records').create({
+      const response = await client.collection("medical-records").create({
         data: {
           permasalahan: newRecord.permasalahan,
           diagnosa: newRecord.diagnosa,
@@ -78,7 +78,7 @@ const MedicalRecords = () => {
   const handleDelete = async (id) => {
     try {
       const client = getStrapiClient();
-      await client.collection('medical-records').delete(id);
+      await client.collection("medical-records").delete(id);
       setRecords(records.filter((record) => record.id !== id));
     } catch (error) {
       // Error handled silently

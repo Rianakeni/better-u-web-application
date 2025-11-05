@@ -117,8 +117,8 @@ const Booking = () => {
       // Strapi v5: Format data untuk relasi - gunakan ID saja (number atau string documentId)
       // Pastikan userId adalah number (untuk relation)
       // Schedule bisa number (id) atau string (documentId) tergantung Strapi version
-      const studentId = typeof userId === 'number' ? userId : parseInt(userId);
-      
+      const studentId = typeof userId === "number" ? userId : parseInt(userId);
+
       if (!studentId || isNaN(studentId)) {
         toast.error("User ID tidak valid");
         setBusy(false);
@@ -134,7 +134,7 @@ const Booking = () => {
         studentId,
         scheduleId: scheduleIdForRelation,
         schedule: schedule,
-        phoneNumber
+        phoneNumber,
       });
 
       // Simpan phoneNumber di appointment untuk menghindari masalah CORS saat update schedule
@@ -263,26 +263,32 @@ const Booking = () => {
               }
             }
           }
-          
+
           if (!scheduleUpdated) {
-            console.warn("Schedule isBooked update gagal, tapi appointment sudah dibuat dengan phoneNumber");
+            console.warn(
+              "Schedule isBooked update gagal, tapi appointment sudah dibuat dengan phoneNumber"
+            );
           }
         } catch (updateErr) {
           // Log error but continue - appointment sudah dibuat dengan phoneNumber
-          const errorDetails = updateErr.response?.data || updateErr.error || {};
+          const errorDetails =
+            updateErr.response?.data || updateErr.error || {};
           console.error("Error updating schedule isBooked:", {
             error: updateErr.message || updateErr,
             errorDetails: errorDetails,
             scheduleId: scheduleId,
             documentId: schedule.documentId,
           });
-          
+
           // Show more detailed error message
-          const errorMsg = errorDetails.error?.message || 
-                          errorDetails.message || 
-                          updateErr.message || 
-                          "Update schedule gagal";
-          toast.warning(`Booking berhasil dengan nomor telepon! Namun update jadwal gagal: ${errorMsg}`);
+          const errorMsg =
+            errorDetails.error?.message ||
+            errorDetails.message ||
+            updateErr.message ||
+            "Update schedule gagal";
+          toast.warning(
+            `Booking berhasil dengan nomor telepon! Namun update jadwal gagal: ${errorMsg}`
+          );
         }
       }
 
@@ -339,7 +345,7 @@ const Booking = () => {
         )}
       </div>
       {busy && <div className="booking-busy">Processing...</div>}
-      
+
       <BookingForm
         schedule={selectedSchedule}
         isOpen={showBookingForm}
