@@ -27,29 +27,15 @@ export const useMyHistory = (token) => {
       // Gunakan fetchWithQuery yang sama seperti Dashboard untuk konsistensi
       try {
         // Fetch dua query terpisah untuk Completed dan Scheduled, lalu gabungkan
-        const [completedData, scheduledData] = await Promise.all([
-          // Fetch Completed appointments
-          fetchWithQuery("/appointments", {
-            "filters[student][id]": userId,
-            "filters[statusJadwal]": "Completed",
-            populate: ["schedule", "konselor"],
-            sort: "id:DESC",
-          }).catch(() => ({ data: [] })),
-
-          // Fetch Scheduled appointments (yang baru dibuat dari booking)
-          fetchWithQuery("/appointments", {
-            "filters[student][id]": userId,
-            "filters[statusJadwal]": "Scheduled ", // Dengan spasi di akhir
-            populate: ["schedule", "konselor"],
-            sort: "id:DESC",
-          }).catch(() => ({ data: [] })),
-        ]);
+        const completedData = await fetchWithQuery("/appointments", {
+          "filters[student][id]": userId,
+          "filters[statusJadwal]": "Completed", // Only fetch completed appointments
+          populate: ["schedule", "konselor"], // Populate schedule and konselor if needed
+          sort: "id:DESC",
+        }).catch(() => ({ data: [] }));
 
         // Gabungkan dan urutkan berdasarkan id DESC
-        const allHistory = [
-          ...(completedData.data || []),
-          ...(scheduledData.data || []),
-        ];
+        const allHistory = [...(completedData.data || [])];
 
         // Sort berdasarkan id DESC (yang terbaru di atas)
         allHistory.sort((a, b) => {

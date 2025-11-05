@@ -59,14 +59,6 @@ const HistoryCard = ({ item }) => {
     attrs.medical_record?.data ||
     attrs.medical_record;
 
-  const fileUrl =
-    medicalRecord?.file?.data?.attributes?.url ||
-    medicalRecord?.file?.data?.url ||
-    medicalRecord?.file?.url ||
-    medicalRecord?.filePDF?.data?.attributes?.url ||
-    medicalRecord?.filePDF?.data?.url ||
-    medicalRecord?.filePDF?.url;
-
   return (
     <div className="scheduled-card">
       <div className="dash-item history">

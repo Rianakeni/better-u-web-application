@@ -63,7 +63,7 @@ const SmallItem = ({ item, type }) => {
 
         <div className="dash-row dash-doctor">
           <FaUserMd className="dash-icon" aria-hidden="true" />
-          <span className="dash-text">{konselor}</span>
+          <span className="dash-text">dr {konselor}</span>
         </div>
       </div>
     </div>
