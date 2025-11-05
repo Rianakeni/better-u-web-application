@@ -4,21 +4,26 @@ import { useNavigate } from "react-router-dom";
 import { useAppointments } from "./useAppointments";
 import { toast } from "react-toastify";
 import { userData } from "../../helpers";
-import { getStrapiClient, getCurrentUserId, strapiAxios } from "../../lib/strapiClient";
+import {
+  getStrapiClient,
+  getCurrentUserId,
+  strapiAxios,
+} from "../../lib/strapiClient";
 
 const SlotCard = ({ schedule, onBook }) => {
   // Strapi v5: data langsung di root, tidak ada attributes wrapper
   // Support both v4 (with attributes) and v5 (without attributes)
-  const attrs = schedule?.attributes || schedule || {};
-  
-  if (!schedule || (!attrs.tanggal && !attrs.jam_mulai)) {
-    return <div className="slot-card">Loading...</div>;
-  }
+  // const attrs = schedule?.attributes || schedule || {};
 
+  // if (!schedule || (!attrs.tanggal && !attrs.jam_mulai)) {
+  //   return <div className="slot-card">Loading...</div>;
+  // }
+
+  const attrs = schedule.attributes;
   const tanggal = attrs.tanggal;
   const jam_mulai = attrs.jam_mulai;
   const jam_selesai = attrs.jam_selesai;
-  
+
   // Konselor: support both v4 and v5 format
   const konselor =
     attrs.konselor?.data?.attributes?.nama ||
@@ -80,7 +85,7 @@ const Booking = () => {
     }
 
     setBusy(true);
-    
+
     try {
       const userId = await getCurrentUserId();
 
@@ -104,10 +109,15 @@ const Booking = () => {
       let result;
       try {
         const client = getStrapiClient();
-        result = await client.collection('appointments').create(appointmentData);
+        result = await client
+          .collection("appointments")
+          .create(appointmentData);
       } catch (clientErr) {
         // Fallback to axios if client fails
-        const { data } = await strapiAxios.post('/appointments', appointmentData);
+        const { data } = await strapiAxios.post(
+          "/appointments",
+          appointmentData
+        );
         result = data;
       }
 
@@ -116,19 +126,20 @@ const Booking = () => {
       if (scheduleId) {
         try {
           // Strapi v5: Gunakan documentId untuk update (jika ada), fallback ke id
-          const updateScheduleId = schedule.documentId || schedule.id || scheduleId;
-          
+          const updateScheduleId =
+            schedule.documentId || schedule.id || scheduleId;
+
           // Try different formats for Strapi v5
           // Format 1: With data wrapper (Strapi v4/v5 style)
           const updateDataWithWrapper = {
             data: {
-              isBooked: true
-            }
+              isBooked: true,
+            },
           };
 
           // Format 2: Direct object (Strapi v5 style - mungkin tidak pakai wrapper)
           const updateDataDirect = {
-            isBooked: true
+            isBooked: true,
           };
 
           // Try axios directly first (more reliable for PUT requests)
@@ -136,28 +147,44 @@ const Booking = () => {
             let response;
             // Try with data wrapper first
             try {
-              response = await strapiAxios.put(`/schedules/${updateScheduleId}`, updateDataWithWrapper, {
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              });
+              response = await strapiAxios.put(
+                `/schedules/${updateScheduleId}`,
+                updateDataWithWrapper,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
             } catch (wrapperErr) {
               // If wrapper fails, try direct format
-              response = await strapiAxios.put(`/schedules/${updateScheduleId}`, updateDataDirect, {
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              });
+              response = await strapiAxios.put(
+                `/schedules/${updateScheduleId}`,
+                updateDataDirect,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
             }
           } catch (axiosErr) {
             // If 404 with id, try with documentId
-            if (axiosErr.response?.status === 404 && schedule.documentId && updateScheduleId === schedule.id) {
+            if (
+              axiosErr.response?.status === 404 &&
+              schedule.documentId &&
+              updateScheduleId === schedule.id
+            ) {
               try {
-                await strapiAxios.put(`/schedules/${schedule.documentId}`, updateDataWithWrapper, {
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                });
+                await strapiAxios.put(
+                  `/schedules/${schedule.documentId}`,
+                  updateDataWithWrapper,
+                  {
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
               } catch (docIdErr) {
                 throw docIdErr;
               }
@@ -166,18 +193,24 @@ const Booking = () => {
               try {
                 const client = getStrapiClient();
                 // Try with wrapper format first
-                await client.collection('schedules').update(updateScheduleId, updateDataWithWrapper);
+                await client
+                  .collection("schedules")
+                  .update(updateScheduleId, updateDataWithWrapper);
               } catch (clientErr) {
                 // Try with direct format
                 try {
                   const client = getStrapiClient();
-                  await client.collection('schedules').update(updateScheduleId, updateDataDirect);
+                  await client
+                    .collection("schedules")
+                    .update(updateScheduleId, updateDataDirect);
                 } catch (directClientErr) {
                   // Try with documentId if id failed
                   if (schedule.documentId && updateScheduleId === schedule.id) {
                     try {
                       const client = getStrapiClient();
-                      await client.collection('schedules').update(schedule.documentId, updateDataWithWrapper);
+                      await client
+                        .collection("schedules")
+                        .update(schedule.documentId, updateDataWithWrapper);
                     } catch (docIdErr) {
                       throw docIdErr;
                     }
@@ -194,26 +227,27 @@ const Booking = () => {
       }
 
       toast.success("Booking berhasil!");
-      
+
       // Refresh slots after booking untuk update list
       await fetchSlots();
-      
+
       // Navigate to "Jadwal Saya" setelah booking berhasil agar user bisa langsung lihat jadwalnya
       setTimeout(() => {
         navigate("/jadwal");
       }, 1000); // Delay 1 detik untuk memberikan waktu toast message terlihat
     } catch (err) {
       // Handle AbortError specifically
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      if (err.name === "AbortError" || err.message?.includes("aborted")) {
         toast.error("Booking dibatalkan");
       } else {
         // Extract detailed error message
         const errorData = err.response?.data || err.error || {};
-        const errorMsg = errorData.error?.message || 
-                        errorData.message || 
-                        err.message || 
-                        "Booking gagal";
-        
+        const errorMsg =
+          errorData.error?.message ||
+          errorData.message ||
+          err.message ||
+          "Booking gagal";
+
         toast.error(`Booking gagal: ${errorMsg}`);
       }
     } finally {
@@ -232,7 +266,11 @@ const Booking = () => {
         ) : slots && slots.length ? (
           <div className="booking-grid">
             {slots.map((s) => (
-              <SlotCard key={s.id || s.documentId} schedule={s} onBook={handleBook} />
+              <SlotCard
+                key={s.id || s.documentId}
+                schedule={s}
+                onBook={handleBook}
+              />
             ))}
           </div>
         ) : (

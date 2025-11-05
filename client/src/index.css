@@ -438,8 +438,7 @@ code {
       justify-content: space-between;
       align-items: center;
       padding: 14px;
-      border-radius: 8px;
-      background: #b6f6c2;
+      gap: 10px;
     }
     .appointment-left {
       text-align: left;
@@ -879,4 +878,80 @@ code {
   gap: 6px;
   align-items: stretch;
   text-align: left;
+}
+
+.scheduled-card {
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive styling untuk AppointmentCard */
+@media (max-width: 767px) {
+  .appointment-card {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .appointment-card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .appointment-card-body {
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .appointment-card-body .appointment-time,
+  .appointment-card-body .appointment-doctor {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+
+  .appointment-card-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  .cancel-btn,
+  .edit-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+
+  .dash-item {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .dash-item-left,
+  .dash-item-right {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+}
+
+/* Untuk layar yang lebih besar, layout tetap menggunakan flex */
+@media (min-width: 768px) {
+  .appointment-card-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .cancel-btn,
+  .edit-btn {
+    width: 45%;
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
 }

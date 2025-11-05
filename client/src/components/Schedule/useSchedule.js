@@ -9,14 +9,14 @@ export const useSchedules = () => {
   const fetchSchedules = async () => {
     try {
       const client = getStrapiClient();
-      const schedulesData = await client.collection('schedules').find({
+      const schedulesData = await client.collection("schedules").find({
         filters: {
           isBooked: {
-            $eq: false
-          }
+            $eq: false,
+          },
         },
-        populate: '*',
-        sort: ['tanggal:asc', 'jam_mulai:asc']
+        populate: "*",
+        sort: ["tanggal:asc", "jam_mulai:asc"],
       });
 
       if (!Array.isArray(schedulesData.data)) {
