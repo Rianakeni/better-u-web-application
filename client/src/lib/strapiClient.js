@@ -161,15 +161,46 @@ export const buildStrapiQuery = (params) => {
     } else if (key === 'populate') {
       // Handle populate - format array untuk multiple populate
       if (typeof value === 'string') {
-        // Jika string dengan comma, convert ke array format
-        const populateFields = value.split(',').map(f => f.trim());
-        populateFields.forEach((field, index) => {
-          queryParts.push(`populate[${index}]=${field}`);
-        });
+        // Jika string adalah '*' atau 'true', gunakan langsung
+        if (value === '*' || value === 'true') {
+          queryParts.push(`populate=*`);
+        } else if (value.includes(',')) {
+          // Jika string dengan comma, convert ke array format
+          const populateFields = value.split(',').map(f => f.trim());
+          populateFields.forEach((field, index) => {
+            queryParts.push(`populate[${index}]=${field}`);
+          });
+        } else {
+          queryParts.push(`populate=${encodeURIComponent(value)}`);
+        }
       } else if (Array.isArray(value)) {
         // Jika sudah array
         value.forEach((field, index) => {
           queryParts.push(`populate[${index}]=${field}`);
+        });
+      } else if (typeof value === 'object' && value !== null) {
+        // Handle populate object format (Strapi v5 nested populate)
+        // Contoh: { schedule: { populate: '*' }, konselor: true }
+        Object.keys(value).forEach((field, index) => {
+          const fieldValue = value[field];
+          if (typeof fieldValue === 'object' && fieldValue !== null) {
+            // Nested populate seperti { schedule: { populate: '*' } }
+            if (fieldValue.populate) {
+              if (fieldValue.populate === '*') {
+                queryParts.push(`populate[${field}][populate]=*`);
+              } else {
+                queryParts.push(`populate[${field}][populate]=${encodeURIComponent(fieldValue.populate)}`);
+              }
+            } else {
+              // Complex nested object - convert to JSON string
+              queryParts.push(`populate[${field}]=${encodeURIComponent(JSON.stringify(fieldValue))}`);
+            }
+          } else if (fieldValue === true) {
+            // Simple populate: { konselor: true }
+            queryParts.push(`populate[${field}]=true`);
+          } else {
+            queryParts.push(`populate[${field}]=${encodeURIComponent(fieldValue)}`);
+          }
         });
       } else {
         queryParts.push(`populate=${encodeURIComponent(value)}`);

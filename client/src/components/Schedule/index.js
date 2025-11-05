@@ -3,32 +3,78 @@ import { useMySchedule } from "./useMySchedule";
 import { Protector } from "../../helpers";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { strapiAxios, getStrapiClient } from "../../lib/strapiClient";
 
-const AppointmentCard = ({ appt, onEdit }) => {
+const AppointmentCard = ({ appt, onEdit, onCancel }) => {
   // Strapi v5: data langsung di root, tidak ada attributes wrapper
   // Support both v4 (with attributes) and v5 (without attributes)
   const attrs = appt.attributes || appt || {};
 
-  // Strapi v5: populate langsung di root, tidak ada .data.attributes
-  // Support both formats (v4: schedule.data.attributes, v5: schedule.data atau schedule)
-  const scheduleRel =
-    attrs.schedule?.data?.attributes ||
-    attrs.schedule?.data ||
-    attrs.schedule ||
-    {};
+  // Debug: Log full appointment structure untuk memahami format data
+  // Cek di berbagai level: appt langsung, appt.attributes, atau di root level
+  const scheduleData = appt.schedule || attrs.schedule || null;
+  let scheduleRel = {};
+  
+  // Log full structure untuk debug - expand semua object untuk melihat struktur lengkap
+  if (!scheduleData || scheduleData === null || scheduleData === undefined) {
+    console.log("Full appointment structure (schedule null):", {
+      appointmentId: appt.id || appt.documentId,
+      fullAppt: appt,
+      fullApptKeys: Object.keys(appt),
+      attrs: attrs,
+      attrsKeys: Object.keys(attrs),
+      scheduleAtRoot: appt.schedule,
+      scheduleInAttrs: attrs.schedule,
+      scheduleData: scheduleData,
+      // Expand semua field untuk melihat struktur lengkap
+      allApptFields: JSON.stringify(appt, null, 2)
+    });
+  }
+  
+  if (scheduleData) {
+    // Strapi v4: schedule.data.attributes
+    if (scheduleData.data?.attributes) {
+      scheduleRel = scheduleData.data.attributes;
+    }
+    // Strapi v5: schedule.data (bisa array atau object)
+    else if (scheduleData.data) {
+      // Jika schedule.data adalah array, ambil yang pertama
+      if (Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
+        scheduleRel = scheduleData.data[0];
+      } else {
+        scheduleRel = scheduleData.data;
+      }
+    }
+    // Strapi v5: schedule langsung (object)
+    else if (typeof scheduleData === 'object' && !Array.isArray(scheduleData)) {
+      scheduleRel = scheduleData;
+    }
+  }
 
-  const scheduleComp = scheduleRel.schedule ? scheduleRel.schedule[0] : null;
-  const tanggal = scheduleComp?.tanggal || scheduleRel?.tanggal || attrs.date;
-
-  // Jam: support both v4 and v5 format
-  const jam_mulai = scheduleRel.jam_mulai || scheduleComp?.jam_mulai;
-  const jam_selesai = scheduleRel.jam_selesai || scheduleComp?.jam_selesai;
+  // Extract tanggal dan jam dari scheduleRel
+  const tanggal = scheduleRel.tanggal || attrs.date;
+  const jam_mulai = scheduleRel.jam_mulai;
+  const jam_selesai = scheduleRel.jam_selesai;
   const jam =
     jam_mulai && jam_selesai
       ? `${jam_mulai} - ${jam_selesai}`
-      : scheduleComp?.jam ||
-        scheduleRel?.jam ||
+      : scheduleRel.jam ||
         `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+
+  // Debug log jika data tidak ada
+  if (!tanggal || !jam_mulai || !jam_selesai) {
+    console.warn("Schedule data incomplete:", {
+      appointmentId: appt.id || appt.documentId,
+      scheduleData,
+      scheduleRel,
+      scheduleRelKeys: Object.keys(scheduleRel),
+      tanggal,
+      jam_mulai,
+      jam_selesai,
+      fullScheduleData: JSON.stringify(scheduleData, null, 2)
+    });
+  }
 
   // Konselor: support both v4 and v5 format
   const konselor =
@@ -83,7 +129,7 @@ const AppointmentCard = ({ appt, onEdit }) => {
         </div>
 
         <div className="dash-item-right">
-          {status === "scheduled" && (
+          {status === "Scheduled" && (
             <span className="badge scheduled">{statusLabel}</span>
           )}
           <div
@@ -110,7 +156,7 @@ const AppointmentCard = ({ appt, onEdit }) => {
                 alignContent: "center",
                 justifyContent: "center",
               }}
-              onClick={() => onEdit(appt)}
+              onClick={() => onCancel(appt)}
             >
               Batalkan Jadwal
             </button>
@@ -206,6 +252,7 @@ const MySchedule = ({ token }) => {
   const { appointments, loading, refresh } = useMySchedule(token);
   const navigate = useNavigate();
   const location = useLocation();
+  const [cancelling, setCancelling] = React.useState(false);
 
   // Refresh data saat navigate ke halaman ini (misalnya setelah booking)
   useEffect(() => {
@@ -216,6 +263,123 @@ const MySchedule = ({ token }) => {
   const handleEdit = (appt) => {
     // currently navigate to booking page for reschedule; could be enhanced
     navigate("/booking");
+  };
+
+  const handleCancel = async (appt) => {
+    if (cancelling) return; // Prevent multiple clicks
+    
+    setCancelling(true);
+    try {
+      const appointmentId = appt.id || appt.documentId;
+      
+      if (!appointmentId) {
+        toast.error("Appointment ID tidak ditemukan");
+        setCancelling(false);
+        return;
+      }
+
+      // Update status appointment menjadi Cancelled
+      // Server Strapi mengharapkan payload dengan wrapper { data: { ... } }
+      
+      const updatePayload = {
+        data: {
+          statusJadwal: "Cancelled"
+        }
+      };
+
+      let updateSuccess = false;
+      
+      // Try axios first dengan format yang benar (wrapper data)
+      try {
+        await strapiAxios.put(`/appointments/${appointmentId}`, updatePayload, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        updateSuccess = true;
+      } catch (axiosErr) {
+        // Skip if it's an abort error from axios
+        if (axiosErr.name === 'AbortError' || axiosErr.code === 'ERR_CANCELED') {
+          console.warn("Request was aborted, skipping fallback");
+          setCancelling(false);
+          toast.error("Request dibatalkan. Silakan coba lagi.");
+          return;
+        }
+        
+        // Jika axios gagal karena CORS atau error lain, coba dengan @strapi/client
+        console.warn("Axios update failed, trying @strapi/client:", axiosErr.message || axiosErr);
+        
+        try {
+          const client = getStrapiClient();
+          // Strapi v5: Prioritas documentId untuk update, fallback ke id
+          const updateAppointmentId = appt.documentId || appt.id || appointmentId;
+          
+          // Strapi client juga menggunakan format dengan wrapper data
+          await client.collection('appointments').update(updateAppointmentId, updatePayload);
+          updateSuccess = true;
+        } catch (clientErr) {
+          // Log error untuk debug
+          console.error("Appointment update error:", {
+            axiosErr: {
+              message: axiosErr.message,
+              response: axiosErr.response?.data,
+              status: axiosErr.response?.status,
+              code: axiosErr.code
+            },
+            clientErr: {
+              message: clientErr.message,
+              error: clientErr.error,
+              response: clientErr.response
+            },
+            appointmentId: appointmentId,
+            documentId: appt.documentId,
+            id: appt.id
+          });
+          
+          // Prioritaskan error dari clientErr karena axios gagal karena CORS
+          // Extract error message dari clientErr terlebih dahulu
+          const clientErrorData = clientErr.error || clientErr.response?.data || {};
+          const errorMsg = clientErrorData.error?.message || 
+                          clientErrorData.message || 
+                          clientErr.message ||
+                          (axiosErr.response?.data?.error?.message || axiosErr.response?.data?.message) ||
+                          axiosErr.message ||
+                          "Gagal membatalkan jadwal";
+          
+          throw new Error(errorMsg);
+        }
+      }
+
+      if (updateSuccess) {
+        // Show success notification
+        toast.success("Jadwal berhasil dibatalkan!");
+        
+        // Refresh data setelah cancel (tunggu sedikit agar toast terlihat)
+        setTimeout(() => {
+          refresh();
+        }, 500);
+        
+        // Redirect ke halaman booking setelah delay
+        setTimeout(() => {
+          navigate("/booking");
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Error canceling appointment:", error);
+      
+      // Handle abort error specifically
+      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || error.message?.includes('aborted')) {
+        toast.error("Request dibatalkan. Silakan coba lagi.");
+      } else {
+        const errorMessage = error.response?.data?.error?.message || 
+                            error.response?.data?.message || 
+                            error.message || 
+                            "Gagal membatalkan jadwal";
+        toast.error(`Gagal membatalkan jadwal: ${errorMessage}`);
+      }
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -236,6 +400,7 @@ const MySchedule = ({ token }) => {
                 key={a.id || a.documentId}
                 appt={a}
                 onEdit={handleEdit}
+                onCancel={handleCancel}
               />
             ))}
           </div>
