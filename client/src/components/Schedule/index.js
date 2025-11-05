@@ -3,6 +3,7 @@ import { useMySchedule } from "./useMySchedule";
 import { Protector } from "../../helpers";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
+import ReactLoading from "react-loading";
 
 const AppointmentCard = ({ appt, onEdit }) => {
   // Strapi v5: data langsung di root, tidak ada attributes wrapper
@@ -228,7 +229,9 @@ const MySchedule = ({ token }) => {
 
       <div className="schedule-card">
         {loading ? (
-          <p>Loading...</p>
+          <div className="loading-overlay">
+            <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+          </div>
         ) : appointments && appointments.length ? (
           <div className="schedule-grid">
             {appointments.map((a) => (

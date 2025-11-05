@@ -1,6 +1,7 @@
 import React from "react";
 import { useMyHistory } from "./useMyHistory";
 import { Protector } from "../../helpers";
+import ReactLoading from "react-loading";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
@@ -110,7 +111,9 @@ const MyHistory = ({ token }) => {
 
       <div className="history-card">
         {loading ? (
-          <p>Loading...</p>
+          <div className="loading-overlay">
+            <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+          </div>
         ) : history && history.length ? (
           <div className="history-grid">
             {history.map((h) => (
