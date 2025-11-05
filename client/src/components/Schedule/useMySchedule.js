@@ -23,56 +23,82 @@ export const useMySchedule = (token) => {
         return;
       }
 
-      console.log("🔵 Fetching appointments for userId:", userId);
+      console.log("�� Fetching schedules for userId:", userId);
       
-      // Gunakan populate=* seperti Dashboard (sudah terbukti bekerja)
-      // Ini akan populate semua relasi termasuk schedule melalui linking table
-      const appointmentsUrl = `/appointments?filters[student][id]=${userId}&filters[statusJadwal]=${encodeURIComponent('Scheduled ')}&populate=*&sort=id:ASC`;
+      // DEBUG: Fetch semua schedules dengan booked_by=userId untuk debugging
+      // Hapus populate dulu untuk debug - lihat apakah query dasar bekerja
+      const debugUrl = `/schedules?filters[booked_by][id]=${userId}&sort=tanggal:ASC&pagination[pageSize]=-1`;
+      try {
+        const debugResponse = await strapiAxios.get(debugUrl);
+        const debugData = debugResponse.data?.data || [];
+        console.log("🔍 DEBUG - All schedules with booked_by=userId:", {
+          count: debugData.length,
+          schedules: debugData.map(s => {
+            const scheduleData = s.attributes || s;
+            return {
+              id: s.id || s.documentId,
+              tanggal: scheduleData.tanggal,
+              isBooked: scheduleData.isBooked,
+              statusJadwal: scheduleData.statusJadwal,
+              booked_by: scheduleData.booked_by || scheduleData.bookedBy,
+              hasBookedBy: !!(scheduleData.booked_by || scheduleData.bookedBy)
+            };
+          })
+        });
+      } catch (debugErr) {
+        console.warn("⚠️ Debug query failed:", debugErr);
+        console.warn("Debug error details:", debugErr.response?.data || debugErr.message);
+      }
       
-      console.log("🔵 URL:", appointmentsUrl);
+      // Fetch schedules dengan filter booked_by=userId, isBooked=true, statusJadwal="Scheduled " (with trailing space!)
+      // Hapus populate dulu - kita akan populate setelah fetch jika perlu
+      const schedulesUrl = `/schedules?filters[booked_by][id]=${userId}&filters[isBooked]=true&filters[statusJadwal]=${encodeURIComponent('Scheduled ')}&sort=tanggal:ASC&pagination[pageSize]=-1`;
+      
+      console.log("🔵 URL:", schedulesUrl);
       
       try {
-        const response = await strapiAxios.get(appointmentsUrl);
-        const appointmentsData = response.data;
+        const response = await strapiAxios.get(schedulesUrl);
+        const schedulesData = response.data;
         
-        console.log("✅ Response received:", appointmentsData);
-        console.log("✅ Appointments count:", appointmentsData?.data?.length || 0);
+        console.log("✅ Response received:", schedulesData);
+        console.log("✅ Schedules count:", schedulesData?.data?.length || 0);
+        console.log("✅ Pagination meta:", schedulesData?.meta);
+        console.log("✅ All schedules:", schedulesData?.data);
         
-        // Log detail untuk debug schedule populate - LOG SEMUA APPOINTMENTS
-        if (appointmentsData?.data && appointmentsData.data.length > 0) {
-          console.log("✅ Total appointments:", appointmentsData.data.length);
+        // Check if we need pagination to get more results
+        if (schedulesData?.meta?.pagination) {
+          const { page, pageSize, pageCount, total } = schedulesData.meta.pagination;
+          console.log("📄 Pagination info:", { page, pageSize, pageCount, total });
           
-          // Log semua appointments untuk melihat mana yang schedule-nya null
-          appointmentsData.data.forEach((appt, index) => {
-            console.log(`✅ Appointment ${index + 1} (id: ${appt.id}):`, {
-              id: appt.id,
-              documentId: appt.documentId,
-              statusJadwal: appt.statusJadwal,
-              schedule: appt.schedule,
-              scheduleIsNull: appt.schedule === null,
-              scheduleIsUndefined: appt.schedule === undefined,
-              hasSchedule: !!appt.schedule,
-              konselor: appt.konselor ? "exists" : "null"
-            });
+          // If there are more pages, fetch all pages
+          if (pageCount > 1) {
+            console.log(`⚠️ Found ${total} total schedules, but only ${pageSize} per page. Fetching all pages...`);
             
-            if (appt.schedule) {
-              console.log(`  ✅ Schedule populated for appointment ${appt.id}:`, {
-                scheduleId: appt.schedule.id || appt.schedule.documentId,
-                tanggal: appt.schedule.tanggal,
-                jam_mulai: appt.schedule.jam_mulai,
-                jam_selesai: appt.schedule.jam_selesai
-              });
-            } else {
-              console.error(`  ❌ Schedule NOT populated for appointment ${appt.id}`);
+            const allSchedules = [...(schedulesData.data || [])];
+            
+            // Fetch remaining pages
+            for (let p = 2; p <= pageCount; p++) {
+              try {
+                const pageUrl = `${schedulesUrl}&pagination[page]=${p}`;
+                const pageResponse = await strapiAxios.get(pageUrl);
+                const pageData = pageResponse.data?.data || [];
+                allSchedules.push(...pageData);
+                console.log(`✅ Fetched page ${p}: ${pageData.length} schedules`);
+              } catch (pageErr) {
+                console.error(`❌ Error fetching page ${p}:`, pageErr);
+              }
             }
-          });
-        } else {
-          console.warn("⚠️ No appointments found");
+            
+            console.log(`✅ Total schedules fetched: ${allSchedules.length}`);
+            setAppointments(allSchedules);
+            return;
+          }
         }
         
-        setAppointments(appointmentsData?.data || []);
+        // Data langsung dari schedules, tidak perlu parse appointment structure
+        setAppointments(schedulesData?.data || []);
       } catch (err) {
-        console.error("❌ Error fetching appointments:", err);
+        console.error("❌ Error fetching schedules:", err);
         console.error("Error details:", err.response?.data || err.message);
         setAppointments([]);
       }

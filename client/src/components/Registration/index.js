@@ -6,7 +6,7 @@ import { Col, Row, Button, FormGroup, Input } from "reactstrap";
 import { register } from "../../lib/strapiClient";
 
 // Inisialisasi state user dengan data kosong
-const initialUser = { email: "", password: "", username: "", phonenumber: "" };
+const initialUser = { email: "", password: "", username: "" };
 
 const Registration = () => {
   const [user, setUser] = useState(initialUser);
@@ -16,12 +16,7 @@ const Registration = () => {
   const signUp = async () => {
     try {
       // Validasi input pengguna
-      if (
-        !user.username ||
-        !user.email ||
-        !user.password ||
-        !user.phonenumber
-      ) {
+      if (!user.username || !user.email || !user.password) {
         toast.error("Please fill in all fields.", { hideProgressBar: true });
         return;
       }
@@ -41,24 +36,11 @@ const Registration = () => {
         return;
       }
 
-      // Validasi nomor telepon (contoh: minimal 10 digit angka)
-      const phoneRegex = /^[0-9]{10,}$/;
-      if (!phoneRegex.test(user.phonenumber)) {
-        toast.error(
-          "Invalid phone number format. Must be at least 10 digits.",
-          {
-            hideProgressBar: true,
-          }
-        );
-        return;
-      }
-
       // Kirim data ke API
       const res = await register({
         username: user.username,
         email: user.email,
         password: user.password,
-        phonenumber: user.phonenumber,
       });
 
       // Cek apakah request berhasil
@@ -107,15 +89,6 @@ const Registration = () => {
               value={user.email}
               onChange={handleUserChange}
               placeholder="Enter your email"
-            />
-          </FormGroup>
-          <FormGroup>
-            <Input
-              type="text" // Anda bisa mengganti type="tel" untuk usability di mobile
-              name="phonenumber"
-              value={user.phonenumber}
-              onChange={handleUserChange}
-              placeholder="Enter your phone number"
             />
           </FormGroup>
           <FormGroup>

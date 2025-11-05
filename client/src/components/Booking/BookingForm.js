@@ -99,7 +99,9 @@ const BookingForm = ({ schedule, isOpen, onClose, onConfirm }) => {
                 className={formErrors.phoneNumber ? "error" : ""}
               />
               {formErrors.phoneNumber && (
-                <span className="booking-modal-error">{formErrors.phoneNumber}</span>
+                <span className="booking-modal-error">
+                  {formErrors.phoneNumber}
+                </span>
               )}
             </div>
             <div className="booking-modal-actions">
@@ -118,4 +120,3 @@ const BookingForm = ({ schedule, isOpen, onClose, onConfirm }) => {
 };
 
 export default BookingForm;
-

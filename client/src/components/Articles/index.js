@@ -5,11 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { userData } from "../../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const Articles = () => {
   const { articles, loading, error, deleteArticle, updateArticle } =
     useArticles();
+  const [newArticleTitle, setNewArticleTitle] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const navigate = useNavigate();
 
@@ -22,7 +25,7 @@ const Articles = () => {
           navigate("/login");
           return;
         }
-        
+
         const response = await fetch(`${API_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${jwt}`,
@@ -73,9 +76,7 @@ const Articles = () => {
             // Helper untuk mendapatkan coverImage dari article
             const getCoverImage = (article) => {
               return (
-                article?.coverImage ||
-                article?.attributes?.coverImage ||
-                {}
+                article?.coverImage || article?.attributes?.coverImage || {}
               );
             };
 
@@ -101,7 +102,9 @@ const Articles = () => {
                   {imageUrl ? (
                     <img
                       src={imageUrl}
-                      alt={article.attributes?.title || article.title || "Article"}
+                      alt={
+                        article.attributes?.title || article.title || "Article"
+                      }
                       style={{
                         width: "80px",
                         height: "80px",
@@ -136,14 +139,20 @@ const Articles = () => {
                     <Button
                       variant="info"
                       size="sm"
-                      onClick={() => navigate(`/articles/edit/${article.id || article.documentId}`)}
+                      onClick={() =>
+                        navigate(
+                          `/articles/edit/${article.id || article.documentId}`
+                        )
+                      }
                     >
                       edit
                     </Button>
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => deleteArticle(article.id || article.documentId)}
+                      onClick={() =>
+                        deleteArticle(article.id || article.documentId)
+                      }
                     >
                       delete
                     </Button>
@@ -152,12 +161,20 @@ const Articles = () => {
                 <td>
                   <div className="d-flex gap-2 align-items-center">
                     {/* Handle both formats for status */}
-                    {article.attributes?.status || article.status_article || "draft"}
-                    {(article.attributes?.status === "draft" || article.status_article === "draft") && (
+                    {article.attributes?.status ||
+                      article.status_article ||
+                      "draft"}
+                    {(article.attributes?.status === "draft" ||
+                      article.status_article === "draft") && (
                       <Button
                         variant="success"
                         size="sm"
-                        onClick={() => updateArticle(article.id || article.documentId, "published")}
+                        onClick={() =>
+                          updateArticle(
+                            article.id || article.documentId,
+                            "published"
+                          )
+                        }
                       >
                         Publish
                       </Button>

@@ -5,86 +5,52 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { strapiAxios, getStrapiClient } from "../../lib/strapiClient";
+import ReactLoading from "react-loading";
 
-const AppointmentCard = ({ appt, onEdit, onCancel }) => {
-  // Strapi v5: data langsung di root, tidak ada attributes wrapper
-  // Support both v4 (with attributes) and v5 (without attributes)
-  const attrs = appt.attributes || appt || {};
+const AppointmentCard = ({ schedule, onEdit, onCancel }) => {
+  // Data langsung dari schedule, tidak perlu parse appointment structure
+  // Support both Strapi v4 (with attributes) and v5 (without attributes)
+  const scheduleData = schedule?.attributes || schedule || {};
 
-  // Debug: Log full appointment structure untuk memahami format data
-  // Cek di berbagai level: appt langsung, appt.attributes, atau di root level
-  const scheduleData = appt.schedule || attrs.schedule || null;
-  let scheduleRel = {};
-  
-  // Log full structure untuk debug - expand semua object untuk melihat struktur lengkap
-  if (!scheduleData || scheduleData === null || scheduleData === undefined) {
-    console.log("Full appointment structure (schedule null):", {
-      appointmentId: appt.id || appt.documentId,
-      fullAppt: appt,
-      fullApptKeys: Object.keys(appt),
-      attrs: attrs,
-      attrsKeys: Object.keys(attrs),
-      scheduleAtRoot: appt.schedule,
-      scheduleInAttrs: attrs.schedule,
-      scheduleData: scheduleData,
-      // Expand semua field untuk melihat struktur lengkap
-      allApptFields: JSON.stringify(appt, null, 2)
-    });
-  }
-  
-  if (scheduleData) {
-    // Strapi v4: schedule.data.attributes
-    if (scheduleData.data?.attributes) {
-      scheduleRel = scheduleData.data.attributes;
-    }
-    // Strapi v5: schedule.data (bisa array atau object)
-    else if (scheduleData.data) {
-      // Jika schedule.data adalah array, ambil yang pertama
-      if (Array.isArray(scheduleData.data) && scheduleData.data.length > 0) {
-        scheduleRel = scheduleData.data[0];
-      } else {
-        scheduleRel = scheduleData.data;
-      }
-    }
-    // Strapi v5: schedule langsung (object)
-    else if (typeof scheduleData === 'object' && !Array.isArray(scheduleData)) {
-      scheduleRel = scheduleData;
-    }
+  // Extract tanggal dan jam dari schedule
+  const tanggal = scheduleData.tanggal;
+  const jam_mulai = scheduleData.jam_mulai;
+  const jam_selesai = scheduleData.jam_selesai;
+
+  // Format jam dengan fallback
+  let jam = "-";
+  if (jam_mulai && jam_selesai) {
+    jam = `${jam_mulai} - ${jam_selesai}`;
+  } else if (jam_mulai) {
+    jam = jam_mulai;
+  } else if (jam_selesai) {
+    jam = jam_selesai;
   }
 
-  // Extract tanggal dan jam dari scheduleRel
-  const tanggal = scheduleRel.tanggal || attrs.date;
-  const jam_mulai = scheduleRel.jam_mulai;
-  const jam_selesai = scheduleRel.jam_selesai;
-  const jam =
-    jam_mulai && jam_selesai
-      ? `${jam_mulai} - ${jam_selesai}`
-      : scheduleRel.jam ||
-        `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
+  // Konselor dari field konselor langsung (oneWay relation ke User)
+  const konselor =
+    scheduleData.konselor?.username ||
+    scheduleData.konselor?.data?.username ||
+    scheduleData.konselor?.data?.attributes?.username ||
+    scheduleData.konselor?.email ||
+    "dr. konselor";
 
   // Debug log jika data tidak ada
   if (!tanggal || !jam_mulai || !jam_selesai) {
     console.warn("Schedule data incomplete:", {
-      appointmentId: appt.id || appt.documentId,
+      scheduleId: schedule.id || schedule.documentId,
       scheduleData,
-      scheduleRel,
-      scheduleRelKeys: Object.keys(scheduleRel),
+      scheduleDataKeys: Object.keys(scheduleData),
       tanggal,
       jam_mulai,
       jam_selesai,
+      hasJamMulai: !!jam_mulai,
+      hasJamSelesai: !!jam_selesai,
       fullScheduleData: JSON.stringify(scheduleData, null, 2)
     });
   }
 
-  // Konselor: support both v4 and v5 format
-  const konselor =
-    attrs.konselor?.data?.attributes?.username ||
-    attrs.konselor?.data?.username ||
-    attrs.konselor?.username ||
-    attrs.konselor ||
-    "dr. konselor";
-
-  const status = (attrs.statusJadwal || "").trim();
+  const status = (scheduleData.statusJadwal || "").trim();
 
   const statusLabel =
     status === "Scheduled"
@@ -156,7 +122,7 @@ const AppointmentCard = ({ appt, onEdit, onCancel }) => {
                 alignContent: "center",
                 justifyContent: "center",
               }}
-              onClick={() => onCancel(appt)}
+              onClick={() => onCancel(schedule)}
             >
               Batalkan Jadwal
             </button>
@@ -174,7 +140,7 @@ const AppointmentCard = ({ appt, onEdit, onCancel }) => {
                 justifyContent: "center",
                 alignItems: "center",
               }}
-              onClick={() => onEdit(appt)}
+              onClick={() => onEdit(schedule)}
             >
               Ubah jadwal
             </button>
@@ -270,20 +236,25 @@ const MySchedule = ({ token }) => {
     
     setCancelling(true);
     try {
-      const appointmentId = appt.id || appt.documentId;
+      const scheduleId = appt.id || appt.documentId;
       
-      if (!appointmentId) {
-        toast.error("Appointment ID tidak ditemukan");
+      if (!scheduleId) {
+        toast.error("Schedule ID tidak ditemukan");
         setCancelling(false);
         return;
       }
 
-      // Update status appointment menjadi Cancelled
+      // Update schedule: statusJadwal="Cancelled", isBooked=false, booked_by=null, phoneNumber=null
       // Server Strapi mengharapkan payload dengan wrapper { data: { ... } }
+      
+      const updateScheduleId = appt.documentId || appt.id || scheduleId;
       
       const updatePayload = {
         data: {
-          statusJadwal: "Cancelled"
+          statusJadwal: "Cancelled",
+          isBooked: false,
+          booked_by: null,
+          phoneNumber: null
         }
       };
 
@@ -291,12 +262,13 @@ const MySchedule = ({ token }) => {
       
       // Try axios first dengan format yang benar (wrapper data)
       try {
-        await strapiAxios.put(`/appointments/${appointmentId}`, updatePayload, {
+        await strapiAxios.put(`/schedules/${updateScheduleId}`, updatePayload, {
           headers: {
             'Content-Type': 'application/json',
           },
         });
         updateSuccess = true;
+        console.log("✅ Schedule cancelled successfully via axios");
       } catch (axiosErr) {
         // Skip if it's an abort error from axios
         if (axiosErr.name === 'AbortError' || axiosErr.code === 'ERR_CANCELED') {
@@ -312,14 +284,18 @@ const MySchedule = ({ token }) => {
         try {
           const client = getStrapiClient();
           // Strapi v5: Prioritas documentId untuk update, fallback ke id
-          const updateAppointmentId = appt.documentId || appt.id || appointmentId;
-          
-          // Strapi client juga menggunakan format dengan wrapper data
-          await client.collection('appointments').update(updateAppointmentId, updatePayload);
+          // Gunakan booked_by (underscore) sesuai schema
+          await client.collection('schedules').update(updateScheduleId, {
+            statusJadwal: "Cancelled",
+            isBooked: false,
+            booked_by: null,
+            phoneNumber: null
+          });
           updateSuccess = true;
+          console.log("✅ Schedule cancelled successfully via @strapi/client");
         } catch (clientErr) {
           // Log error untuk debug
-          console.error("Appointment update error:", {
+          console.error("Schedule update error:", {
             axiosErr: {
               message: axiosErr.message,
               response: axiosErr.response?.data,
@@ -331,12 +307,11 @@ const MySchedule = ({ token }) => {
               error: clientErr.error,
               response: clientErr.response
             },
-            appointmentId: appointmentId,
+            scheduleId: scheduleId,
             documentId: appt.documentId,
             id: appt.id
           });
           
-          // Prioritaskan error dari clientErr karena axios gagal karena CORS
           // Extract error message dari clientErr terlebih dahulu
           const clientErrorData = clientErr.error || clientErr.response?.data || {};
           const errorMsg = clientErrorData.error?.message || 
@@ -365,7 +340,7 @@ const MySchedule = ({ token }) => {
         }, 1500);
       }
     } catch (error) {
-      console.error("Error canceling appointment:", error);
+      console.error("Error canceling schedule:", error);
       
       // Handle abort error specifically
       if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || error.message?.includes('aborted')) {
@@ -392,13 +367,15 @@ const MySchedule = ({ token }) => {
 
       <div className="schedule-card">
         {loading ? (
-          <p>Loading...</p>
+          <div className="loading-overlay">
+            <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+          </div>
         ) : appointments && appointments.length ? (
           <div className="schedule-grid">
             {appointments.map((a) => (
               <AppointmentCard
                 key={a.id || a.documentId}
-                appt={a}
+                schedule={a}
                 onEdit={handleEdit}
                 onCancel={handleCancel}
               />

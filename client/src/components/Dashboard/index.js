@@ -2,35 +2,28 @@ import React, { useState } from "react";
 import { useDashboard } from "./useDashboard";
 import { Protector } from "../../helpers";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
+import ReactLoading from "react-loading";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
   "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 const SmallItem = ({ item, type }) => {
-  // Strapi v5: data langsung di root, tidak ada attributes wrapper
-  // Support both v4 (with attributes) and v5 (without attributes)
-  const attrs = item.attributes || item || {};
+  // Data langsung dari schedule, tidak perlu parse appointment structure
+  // Support both Strapi v4 (with attributes) and v5 (without attributes)
+  const scheduleData = item?.attributes || item || {};
 
-  // Strapi v5: populate langsung di root, tidak ada .data.attributes
-  // Support both formats (v4: schedule.data.attributes, v5: schedule.data atau schedule)
-  const schedule =
-    attrs.schedule?.data?.attributes ||
-    attrs.schedule?.data ||
-    attrs.schedule ||
-    {};
+  // Ambil tanggal, jam_mulai, jam_selesai dari schedule langsung
+  const tanggal = scheduleData.tanggal;
+  const jam_mulai = scheduleData.jam_mulai;
+  const jam_selesai = scheduleData.jam_selesai;
 
-  // Ambil tanggal, jam_mulai, jam_selesai dari schedule
-  const tanggal = schedule.tanggal;
-  const jam_mulai = schedule.jam_mulai;
-  const jam_selesai = schedule.jam_selesai;
-
-  // Konselor: support both v4 and v5 format
+  // Konselor dari field konselor langsung (oneWay relation ke User)
   const konselor =
-    attrs.konselor?.data?.attributes?.username ||
-    attrs.konselor?.data?.username ||
-    attrs.konselor?.username ||
-    attrs.konselor ||
+    scheduleData.konselor?.username ||
+    scheduleData.konselor?.data?.username ||
+    scheduleData.konselor?.data?.attributes?.username ||
+    scheduleData.konselor?.email ||
     "dr. konselor";
 
   const dateStr = tanggal
@@ -62,7 +55,7 @@ const SmallItem = ({ item, type }) => {
 
         <div className="dash-row dash-doctor">
           <FaUserMd className="dash-icon" aria-hidden="true" />
-          <span className="dash-text">{konselor}</span>
+          <span className="dash-text">dr {konselor}</span>
         </div>
       </div>
     </div>
@@ -82,7 +75,12 @@ const Dashboard = ({ token }) => {
     setExpandedArticleId(expandedArticleId === articleId ? null : articleId);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div className="loading-overlay">
+        <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+      </div>
+    );
   if (error) return <div>Error: {error}</div>;
 
   // Helper untuk mendapatkan data artikel
@@ -169,8 +167,11 @@ const Dashboard = ({ token }) => {
               // Tambahkan cache-busting parameter untuk force refresh gambar
               // Menggunakan timestamp update article atau timestamp saat ini
               if (imageUrl) {
-                const updatedAt = article.attributes?.updatedAt || article.updatedAt || Date.now();
-                const separator = imageUrl.includes('?') ? '&' : '?';
+                const updatedAt =
+                  article.attributes?.updatedAt ||
+                  article.updatedAt ||
+                  Date.now();
+                const separator = imageUrl.includes("?") ? "&" : "?";
                 imageUrl = `${imageUrl}${separator}t=${updatedAt}`;
               }
 
@@ -222,7 +223,11 @@ const Dashboard = ({ token }) => {
                         {imageUrl && (
                           <div style={{ marginBottom: "1.5rem" }}>
                             <img
-                              key={`${articleId}-expanded-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
+                              key={`${articleId}-expanded-${
+                                article.attributes?.updatedAt ||
+                                article.updatedAt ||
+                                Date.now()
+                              }`}
                               src={imageUrl}
                               alt={
                                 getArticleData(article).title ||
@@ -287,9 +292,13 @@ const Dashboard = ({ token }) => {
                     <div className="hero-image">
                       {/* Tampilkan gambar dari API jika ada, jika tidak pakai placeholder */}
                       {imageUrl ? (
-                        <img 
-                          key={`${articleId}-${article.attributes?.updatedAt || article.updatedAt || Date.now()}`}
-                          src={imageUrl} 
+                        <img
+                          key={`${articleId}-${
+                            article.attributes?.updatedAt ||
+                            article.updatedAt ||
+                            Date.now()
+                          }`}
+                          src={imageUrl}
                           alt={articleData.title || article.title || "Article"}
                           style={{
                             maxWidth: "200px",
@@ -301,8 +310,8 @@ const Dashboard = ({ token }) => {
                           }}
                         />
                       ) : (
-                        <img 
-                          src="/mental-wellness.png" 
+                        <img
+                          src="/mental-wellness.png"
                           alt="Article"
                           style={{
                             maxWidth: "200px",

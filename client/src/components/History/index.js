@@ -1,87 +1,63 @@
 import React from "react";
 import { useMyHistory } from "./useMyHistory";
 import { Protector } from "../../helpers";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+import ReactLoading from "react-loading";
+import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
 
 const HistoryCard = ({ item }) => {
-  // Support both Strapi v4 (attributes) and v5 (direct) formats
-  const attrs = item.attributes || item || {};
-  
-  // Handle schedule - support both v4 and v5 formats
-  const scheduleRel = attrs.schedule?.data?.attributes || 
-                      attrs.schedule?.data || 
-                      attrs.schedule || {};
-  const scheduleComp = scheduleRel.schedule ? scheduleRel.schedule[0] : null;
-  
-  // Get tanggal - try multiple paths
-  const tanggal = scheduleComp?.tanggal || 
-                   scheduleRel?.tanggal || 
-                   attrs.date ||
-                   attrs.tanggal;
-  
-  // Get jam_mulai and jam_selesai
-  const jam_mulai = scheduleComp?.jam_mulai || scheduleRel?.jam_mulai;
-  const jam_selesai = scheduleComp?.jam_selesai || scheduleRel?.jam_selesai;
-  const jam = jam_mulai && jam_selesai 
-    ? `${jam_mulai} - ${jam_selesai}`
-    : scheduleComp?.jam ||
-      scheduleRel?.jam ||
-      `${attrs.start_time || ""} - ${attrs.end_time || ""}`;
-  
-  // Get konselor - support both v4 and v5 formats
-  // Try from schedule.konselor first, then from appointment.konselor
-  const konselorFromSchedule = scheduleRel.konselor?.data?.attributes?.username ||
-                               scheduleRel.konselor?.data?.username ||
-                               scheduleRel.konselor?.username ||
-                               scheduleRel.konselor;
-  
-  const konselor = konselorFromSchedule ||
-                   attrs.konselor?.data?.attributes?.username ||
-                   attrs.konselor?.data?.username ||
-                   attrs.konselor?.username ||
-                   attrs.konselor ||
-                   "dr. konselor";
+  // Data langsung dari schedule, tidak perlu parse appointment structure
+  // Support both Strapi v4 (with attributes) and v5 (without attributes)
+  const scheduleData = item?.attributes || item || {};
 
-  // Handle medical_record - support both v4 and v5 formats
-  const medicalRecord = attrs.medical_record?.data?.attributes ||
-                        attrs.medical_record?.data ||
-                        attrs.medical_record;
+  // Extract tanggal dan jam dari schedule langsung
+  const tanggal = scheduleData.tanggal;
+  const jam_mulai = scheduleData.jam_mulai;
+  const jam_selesai = scheduleData.jam_selesai;
   
-  const fileUrl = medicalRecord?.file?.data?.attributes?.url ||
-                  medicalRecord?.file?.data?.url ||
-                  medicalRecord?.file?.url ||
-                  medicalRecord?.filePDF?.data?.attributes?.url ||
-                  medicalRecord?.filePDF?.data?.url ||
-                  medicalRecord?.filePDF?.url;
+  // Format jam: jika ada jam_mulai dan jam_selesai, tampilkan range; jika hanya jam_mulai, tampilkan jam_mulai saja
+  const jam =
+    jam_mulai && jam_selesai
+      ? `${jam_mulai} - ${jam_selesai}`
+      : jam_mulai
+      ? jam_mulai
+      : "-";
+
+  // Konselor dari field konselor langsung (oneWay relation ke User)
+  const konselor =
+    scheduleData.konselor?.username ||
+    scheduleData.konselor?.data?.username ||
+    scheduleData.konselor?.data?.attributes?.username ||
+    scheduleData.konselor?.email ||
+    "dr. konselor";
 
   return (
-    <div className="history-item">
-      <div className="history-left">
-        <div className="history-date">
-          {tanggal
-            ? new Date(tanggal).toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-            : "-"}
+    <div className="scheduled-card">
+      <div className="dash-item history">
+        <div className="dash-item-left">
+          <div className="dash-row dash-date">
+            <FaCalendarAlt className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">
+              {tanggal
+                ? new Date(tanggal).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "-"}
+            </span>
+          </div>
+
+          <div className="dash-row dash-time">
+            <FaClock className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">{jam}</span>
+          </div>
+
+          <div className="dash-row dash-doctor">
+            <FaUserMd className="dash-icon" aria-hidden="true" />
+            <span className="dash-text">{konselor}</span>
+          </div>
         </div>
-        <div className="history-time">{jam}</div>
-        <div className="history-doctor">{konselor}</div>
-      </div>
-      <div className="history-right">
-        {fileUrl && medicalRecord ? (
-          <a
-            className="download-btn"
-            href={`${API_URL}${fileUrl}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            download rekam medis
-          </a>
-        ) : null}
       </div>
     </div>
   );
@@ -100,7 +76,9 @@ const MyHistory = ({ token }) => {
 
       <div className="history-card">
         {loading ? (
-          <p>Loading...</p>
+          <div className="loading-overlay">
+            <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+          </div>
         ) : history && history.length ? (
           <div className="history-grid">
             {history.map((h) => (

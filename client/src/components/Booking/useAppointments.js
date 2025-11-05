@@ -1,6 +1,6 @@
 // src/hooks/useAppointments.js
 import { useState, useCallback } from "react";
-import { getStrapiClient, fetchWithQuery } from "../../lib/strapiClient";
+import { getStrapiClient } from "../../lib/strapiClient";
 
 export const useAppointments = () => {
   const [slots, setSlots] = useState([]);
@@ -12,43 +12,22 @@ export const useAppointments = () => {
     try {
       const client = getStrapiClient();
       
-      // Ambil semua schedules dan appointments yang sudah scheduled secara parallel
-      const [schedulesData, scheduledAppointmentsData] = await Promise.all([
-        // Ambil semua schedules
-        client.collection('schedules').find({
-          populate: '*',
-          sort: ['tanggal:asc', 'jam_mulai:asc']
-        }),
-        // Ambil appointments dengan status "Scheduled " (yang sudah di-booking menjadi appointment terscheduled)
-        fetchWithQuery('/appointments', {
-          'filters[statusJadwal]': 'Scheduled ',
-          populate: 'schedule'
-        }).catch(() => ({ data: [] }))
-      ]);
-      
-      // Extract schedule IDs dari appointments yang sudah scheduled
-      const scheduledAppointments = scheduledAppointmentsData.data || [];
-      const scheduledScheduleIds = new Set(
-        scheduledAppointments
-          .map((appt) => {
-            // Support both Strapi v4 and v5 format
-            const schedule = appt.schedule?.data || appt.schedule;
-            const scheduleId = schedule?.id || schedule?.documentId;
-            return scheduleId;
-          })
-          .filter(Boolean) // Remove undefined/null
-      );
-      
-      // Filter schedules yang tidak ada di scheduled appointments
-      // (schedule yang belum di-booking menjadi appointment yang terscheduled)
-      const allSchedules = schedulesData.data || [];
-      const available = allSchedules.filter((schedule) => {
-        const scheduleId = schedule.id || schedule.documentId;
-        // Hanya return schedule yang ID-nya tidak ada di scheduled appointments
-        return !scheduledScheduleIds.has(scheduleId);
+      // Fetch schedules dengan filter:
+      // - isBooked: false (belum dibooking)
+      // ATAU statusJadwal: "Cancelled" (sudah dibatalkan, bisa di-booking lagi)
+      // Ini akan include schedule yang available dan yang cancelled
+      const schedulesData = await client.collection('schedules').find({
+        filters: {
+          $or: [
+            { isBooked: { $eq: false } },
+            { statusJadwal: { $eq: "Cancelled" } }
+          ]
+        },
+        populate: '*',
+        sort: ['tanggal:asc', 'jam_mulai:asc']
       });
       
-      setSlots(available);
+      setSlots(schedulesData.data || []);
     } catch (err) {
       console.error("Error fetching available slots:", err);
       setSlots([]);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCurrentUser, fetchWithQuery } from "../../lib/strapiClient";
+import { fetchCurrentUser, strapiAxios } from "../../lib/strapiClient";
 
 export const useMyHistory = (token) => {
   const [history, setHistory] = useState([]);
@@ -23,48 +23,65 @@ export const useMyHistory = (token) => {
         return;
       }
 
-      // Fetch appointments dengan status "Completed" dan "Scheduled " (yang sudah dibuat)
-      // Gunakan fetchWithQuery yang sama seperti Dashboard untuk konsistensi
+      console.log("🔵 Fetching history schedules for userId:", userId);
+
+      // Fetch schedules dengan status "Completed" yang booked_by=userId
+      // NOTE: Gunakan booked_by (underscore) karena itu nama field di schema Strapi
+      // Hapus populate yang bermasalah untuk sekarang
       try {
-        // Fetch dua query terpisah untuk Completed dan Scheduled, lalu gabungkan
-        const [completedData, scheduledData] = await Promise.all([
-          // Fetch Completed appointments
-          fetchWithQuery('/appointments', {
-            'filters[student][id]': userId,
-            'filters[statusJadwal]': 'Completed',
-            populate: ['schedule', 'konselor', 'medical_record'],
-            sort: 'id:DESC'
-          }).catch(() => ({ data: [] })),
+        const historyUrl = `/schedules?filters[booked_by][id]=${userId}&filters[isBooked]=true&filters[statusJadwal]=Completed&sort=tanggal:DESC&pagination[pageSize]=-1`;
+        
+        console.log("🔵 History URL:", historyUrl);
+        
+        const { data: historyData } = await strapiAxios.get(historyUrl);
+        
+        console.log("✅ History schedules data:", historyData);
+        console.log("✅ History count:", historyData?.data?.length || 0);
+        
+        // Check if we need pagination to get more results
+        if (historyData?.meta?.pagination) {
+          const { page, pageSize, pageCount, total } = historyData.meta.pagination;
+          console.log("📄 Pagination info:", { page, pageSize, pageCount, total });
           
-          // Fetch Scheduled appointments (yang baru dibuat dari booking)
-          fetchWithQuery('/appointments', {
-            'filters[student][id]': userId,
-            'filters[statusJadwal]': 'Scheduled ', // Dengan spasi di akhir
-            populate: ['schedule', 'konselor', 'medical_record'],
-            sort: 'id:DESC'
-          }).catch(() => ({ data: [] }))
-        ]);
-
-        // Gabungkan dan urutkan berdasarkan id DESC
-        const allHistory = [
-          ...(completedData.data || []),
-          ...(scheduledData.data || [])
-        ];
-
-        // Sort berdasarkan id DESC (yang terbaru di atas)
-        allHistory.sort((a, b) => {
-          const idA = a.id || a.documentId || 0;
-          const idB = b.id || b.documentId || 0;
-          return idB - idA;
+          // If there are more pages, fetch all pages
+          if (pageCount > 1) {
+            console.log(`⚠️ Found ${total} total history schedules, but only ${pageSize} per page. Fetching all pages...`);
+            
+            const allHistory = [...(historyData.data || [])];
+            
+            // Fetch remaining pages
+            for (let p = 2; p <= pageCount; p++) {
+              try {
+                const pageUrl = `${historyUrl}&pagination[page]=${p}`;
+                const pageResponse = await strapiAxios.get(pageUrl);
+                const pageData = pageResponse.data?.data || [];
+                allHistory.push(...pageData);
+                console.log(`✅ Fetched history page ${p}: ${pageData.length} schedules`);
+              } catch (pageErr) {
+                console.error(`❌ Error fetching history page ${p}:`, pageErr);
+              }
+            }
+            
+            console.log(`✅ Total history schedules fetched: ${allHistory.length}`);
+            setHistory(allHistory);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        setHistory(historyData?.data || []);
+      } catch (err) {
+        console.error("❌ Error fetching history schedules:", {
+          error: err.message || err,
+          response: err.response?.data,
+          status: err.response?.status,
+          url: err.config?.url,
+          userId,
         });
-
-        setHistory(allHistory);
-      } catch (queryErr) {
-        console.error('Error fetching history:', queryErr);
         setHistory([]);
       }
     } catch (err) {
-      console.error('Error in fetchHistory:', err);
+      console.error("❌ Error in fetchHistory:", err);
       setHistory([]);
     } finally {
       setLoading(false);
@@ -74,7 +91,7 @@ export const useMyHistory = (token) => {
   useEffect(() => {
     fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token]);
 
   return { history, loading, refresh: fetchHistory };
 };
