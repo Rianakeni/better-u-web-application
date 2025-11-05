@@ -4,7 +4,7 @@ const SlotCard = ({ schedule, onBookClick }) => {
   // Strapi v5: data langsung di root, tidak ada attributes wrapper
   // Support both v4 (with attributes) and v5 (without attributes)
   const attrs = schedule?.attributes || schedule || {};
-  
+
   if (!schedule || (!attrs.tanggal && !attrs.jam_mulai)) {
     return <div className="slot-card">Loading...</div>;
   }
@@ -12,7 +12,7 @@ const SlotCard = ({ schedule, onBookClick }) => {
   const tanggal = attrs.tanggal;
   const jam_mulai = attrs.jam_mulai;
   const jam_selesai = attrs.jam_selesai;
-  
+
   // Konselor: support both v4 and v5 format
   const konselor =
     attrs.konselor?.data?.attributes?.nama ||
@@ -49,4 +49,3 @@ const SlotCard = ({ schedule, onBookClick }) => {
 };
 
 export default SlotCard;
-

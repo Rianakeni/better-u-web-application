@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDashboard } from "./useDashboard";
 import { Protector } from "../../helpers";
 import { FaCalendarAlt, FaClock, FaUserMd } from "react-icons/fa";
+import ReactLoading from "react-loading";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
@@ -82,7 +83,12 @@ const Dashboard = ({ token }) => {
     setExpandedArticleId(expandedArticleId === articleId ? null : articleId);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div className="loading-overlay">
+        <ReactLoading type="spin" color="#3182ce" height={50} width={50} />
+      </div>
+    );
   if (error) return <div>Error: {error}</div>;
 
   // Helper untuk mendapatkan data artikel

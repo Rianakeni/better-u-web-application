@@ -4,11 +4,13 @@ import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import { storeUser } from "../../helpers";
 import { login } from "../../lib/strapiClient";
+import ReactLoading from "react-loading"; // Importing ReactLoading
 
 const initialUser = { password: "", identifier: "" };
 
 const Login = () => {
   const [user, setUser] = useState(initialUser);
+  const [loading, setLoading] = useState(false); // State to manage loading
   const navigate = useNavigate();
 
   const handleChange = ({ target }) => {
@@ -22,6 +24,7 @@ const Login = () => {
   const handleLogin = async () => {
     try {
       if (user.identifier && user.password) {
+        setLoading(true); // Set loading to true before the login request
         const data = await login(user.identifier, user.password);
         if (data.jwt) {
           storeUser(data);
@@ -41,6 +44,8 @@ const Login = () => {
       toast.error(errorMessage, {
         hideProgressBar: true,
       });
+    } finally {
+      setLoading(false); // Set loading to false after the request is done
     }
   };
 
@@ -56,14 +61,7 @@ const Login = () => {
               value={user.identifier}
               onChange={handleChange}
               placeholder="Enter your email"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #e2e8f0",
-                marginBottom: "1rem",
-                fontSize: "1rem",
-              }}
+              style={styles.inputStyle}
             />
           </FormGroup>
           <FormGroup>
@@ -73,31 +71,30 @@ const Login = () => {
               value={user.password}
               onChange={handleChange}
               placeholder="Enter password"
+              style={styles.inputStyle}
             />
           </FormGroup>
           <button
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              borderRadius: "8px",
-              backgroundColor: "#3182ce",
-              color: "white",
-              border: "none",
-              fontSize: "1rem",
-              fontWeight: "500",
-              cursor: "pointer",
-              marginBottom: "1rem",
-            }}
+            style={styles.loginButton}
             onClick={handleLogin}
+            disabled={loading} // Disable the button while loading
           >
-            Login
+            {loading ? (
+              <ReactLoading
+                type="spin"
+                color="#fff"
+                height={24}
+                width={24}
+                justifyContent="center"
+                alignItems="center"
+              />
+            ) : (
+              "Login"
+            )}
           </button>
-          <p style={{ fontSize: "0.875rem", color: "#4a5568" }}>
+          <p style={styles.signupText}>
             Don't have an account?{" "}
-            <Link
-              to="/registration"
-              style={{ color: "#3182ce", textDecoration: "none" }}
-            >
+            <Link to="/registration" style={styles.signupLink}>
               Sign up
             </Link>
           </p>
@@ -113,7 +110,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: `linear-gradient(135deg, #3182ce 0%, #805ad5 100%)`,
+    background: `linear-gradient(135deg, #3182ce 0%, #73dca8ff 100%)`,
     padding: "1rem",
     fontFamily: "sans-serif",
   },
@@ -125,6 +122,38 @@ const styles = {
     boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
     width: "100%",
     maxWidth: "450px",
+  },
+  inputStyle: {
+    width: "100%",
+    padding: "0.75rem",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    marginBottom: "1rem",
+    fontSize: "1rem",
+  },
+  loginButton: {
+    width: "100%",
+    padding: "0.75rem",
+    borderRadius: "8px",
+    backgroundColor: "#3182ce",
+    color: "white",
+    border: "none",
+    fontSize: "1rem",
+    fontWeight: "500",
+    cursor: "pointer",
+    marginBottom: "1rem",
+    display: "flex", // Menggunakan flexbox
+    justifyContent: "center", // Menyusun konten secara horizontal
+    alignItems: "center", // Menyusun konten secara vertikal
+    position: "relative",
+  },
+  signupText: {
+    fontSize: "0.875rem",
+    color: "#4a5568",
+  },
+  signupLink: {
+    color: "#3182ce",
+    textDecoration: "none",
   },
 };
 
