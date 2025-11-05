@@ -4,138 +4,26 @@ import { useNavigate } from "react-router-dom";
 import { useAppointments } from "./useAppointments";
 import { toast } from "react-toastify";
 import { userData } from "../../helpers";
-import { getStrapiClient, getCurrentUserId, strapiAxios } from "../../lib/strapiClient";
+import {
+  getStrapiClient,
+  getCurrentUserId,
+  strapiAxios,
+} from "../../lib/strapiClient";
 
-const BookingForm = ({ schedule, isOpen, onClose, onConfirm }) => {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [formErrors, setFormErrors] = useState({});
-
-  // Reset form when modal opens/closes or schedule changes
-  useEffect(() => {
-    if (isOpen) {
-      setPhoneNumber("");
-      setFormErrors({});
-    }
-  }, [isOpen, schedule]);
-
-  const validatePhoneNumber = (phone) => {
-    // Validasi: minimal 10 digit angka
-    const phoneRegex = /^[0-9]{10,}$/;
-    if (!phone || !phone.trim()) {
-      return "Nomor telepon wajib diisi";
-    }
-    if (!phoneRegex.test(phone.trim())) {
-      return "Nomor telepon harus minimal 10 digit angka";
-    }
-    return null;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const error = validatePhoneNumber(phoneNumber);
-    if (error) {
-      setFormErrors({ phoneNumber: error });
-      return;
-    }
-
-    onConfirm(phoneNumber.trim());
-  };
-
-  const handleChange = (e) => {
-    const value = e.target.value;
-    setPhoneNumber(value);
-    // Clear error when user starts typing
-    if (formErrors.phoneNumber) {
-      setFormErrors({});
-    }
-  };
-
-  if (!isOpen || !schedule) return null;
-
-  const attrs = schedule?.attributes || schedule || {};
-  const tanggal = attrs.tanggal;
-  const jam_mulai = attrs.jam_mulai;
-  const jam_selesai = attrs.jam_selesai;
-  const konselor =
-    attrs.konselor?.data?.attributes?.nama ||
-    attrs.konselor?.data?.nama ||
-    attrs.konselor?.nama ||
-    attrs.konselor ||
-    "dr. konselor";
-
-  const dateStr = tanggal
-    ? new Date(tanggal).toLocaleDateString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Tanggal";
-
-  return (
-    <div className="booking-modal-overlay" onClick={onClose}>
-      <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="booking-modal-header">
-          <h2>Konfirmasi Booking</h2>
-          <button className="booking-modal-close" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <div className="booking-modal-body">
-          <div className="booking-modal-info">
-            <div className="booking-modal-info-item">
-              <strong>Tanggal:</strong> {dateStr}
-            </div>
-            <div className="booking-modal-info-item">
-              <strong>Waktu:</strong> {jam_mulai} - {jam_selesai}
-            </div>
-            <div className="booking-modal-info-item">
-              <strong>Konselor:</strong> {konselor}
-            </div>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="booking-modal-form-group">
-              <label htmlFor="phoneNumber">Nomor Telepon *</label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                value={phoneNumber}
-                onChange={handleChange}
-                placeholder="Masukkan nomor telepon (min. 10 digit)"
-                className={formErrors.phoneNumber ? "error" : ""}
-              />
-              {formErrors.phoneNumber && (
-                <span className="booking-modal-error">{formErrors.phoneNumber}</span>
-              )}
-            </div>
-            <div className="booking-modal-actions">
-              <button type="button" className="btn-cancel" onClick={onClose}>
-                Batal
-              </button>
-              <button type="submit" className="btn-confirm">
-                Konfirmasi Booking
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SlotCard = ({ schedule, onBookClick }) => {
+const SlotCard = ({ schedule, onBook }) => {
   // Strapi v5: data langsung di root, tidak ada attributes wrapper
   // Support both v4 (with attributes) and v5 (without attributes)
-  const attrs = schedule?.attributes || schedule || {};
-  
-  if (!schedule || (!attrs.tanggal && !attrs.jam_mulai)) {
-    return <div className="slot-card">Loading...</div>;
-  }
+  // const attrs = schedule?.attributes || schedule || {};
 
+  // if (!schedule || (!attrs.tanggal && !attrs.jam_mulai)) {
+  //   return <div className="slot-card">Loading...</div>;
+  // }
+
+  const attrs = schedule.attributes;
   const tanggal = attrs.tanggal;
   const jam_mulai = attrs.jam_mulai;
   const jam_selesai = attrs.jam_selesai;
-  
+
   // Konselor: support both v4 and v5 format
   const konselor =
     attrs.konselor?.data?.attributes?.nama ||
@@ -215,8 +103,7 @@ const Booking = () => {
     }
 
     setBusy(true);
-    setShowBookingForm(false);
-    
+
     try {
       const userId = await getCurrentUserId();
 
@@ -262,29 +149,17 @@ const Booking = () => {
 
       // Try using axios first (lebih reliable berdasarkan Network tab)
       try {
-        const { data } = await strapiAxios.post('/appointments', appointmentData);
-        console.log("Appointment created successfully:", data);
-      } catch (axiosErr) {
-        // Jika axios gagal, coba dengan @strapi/client
-        try {
-          const client = getStrapiClient();
-          await client.collection('appointments').create(appointmentData);
-        } catch (clientErr) {
-          // Log error untuk debug
-          console.error("Appointment creation error:", {
-            axiosErr: axiosErr.response?.data || axiosErr.message,
-            clientErr: clientErr.message || clientErr
-          });
-          
-          const errorData = axiosErr.response?.data || clientErr.error || {};
-          const errorMsg = errorData.error?.message || 
-                          errorData.message || 
-                          axiosErr.message || 
-                          clientErr.message ||
-                          "Gagal membuat appointment";
-          
-          throw new Error(errorMsg);
-        }
+        const client = getStrapiClient();
+        result = await client
+          .collection("appointments")
+          .create(appointmentData);
+      } catch (clientErr) {
+        // Fallback to axios if client fails
+        const { data } = await strapiAxios.post(
+          "/appointments",
+          appointmentData
+        );
+        result = data;
       }
 
       // Update schedule isBooked to true setelah booking berhasil
@@ -292,91 +167,99 @@ const Booking = () => {
       // Update schedule hanya untuk set isBooked = true
       if (scheduleId) {
         try {
-          // Strapi v5: Prioritas documentId (string) untuk update, fallback ke id (number)
-          const updateScheduleId = schedule.documentId || schedule.id || scheduleId;
-          
-          // Payload untuk update schedule - hanya isBooked, phoneNumber sudah di appointment
-          const clientUpdatePayload = {
+          // Strapi v5: Gunakan documentId untuk update (jika ada), fallback ke id
+          const updateScheduleId =
+            schedule.documentId || schedule.id || scheduleId;
+
+          // Try different formats for Strapi v5
+          // Format 1: With data wrapper (Strapi v4/v5 style)
+          const updateDataWithWrapper = {
             data: {
-              isBooked: true
-            }
+              isBooked: true,
+            },
           };
 
-          const axiosUpdatePayload = {
-            isBooked: true
+          // Format 2: Direct object (Strapi v5 style - mungkin tidak pakai wrapper)
+          const updateDataDirect = {
+            isBooked: true,
           };
 
-          console.log("Updating schedule isBooked:", {
-            updateScheduleId,
-            documentId: schedule.documentId,
-            id: schedule.id,
-            payload: axiosUpdatePayload
-          });
-
-          // Strapi v5: Coba axios PUT terlebih dahulu (tanpa wrapper data)
-          let scheduleUpdated = false;
+          // Try axios directly first (more reliable for PUT requests)
           try {
-            // Coba dengan axios - Strapi v5 REST API menggunakan format tanpa wrapper data
-            const response = await strapiAxios.put(`/schedules/${updateScheduleId}`, axiosUpdatePayload, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            console.log("Schedule isBooked updated via axios successfully", response.data);
-            scheduleUpdated = true;
-          } catch (axiosErr) {
-            // Jika axios gagal karena CORS, coba dengan @strapi/client (dengan wrapper data)
-            console.warn("Axios update failed, trying @strapi/client:", axiosErr.message || axiosErr);
-            
+            let response;
+            // Try with data wrapper first
             try {
-              const client = getStrapiClient();
-              // Strapi v5 client menggunakan documentId untuk update dengan wrapper data
-              await client.collection('schedules').update(updateScheduleId, clientUpdatePayload);
-              console.log("Schedule isBooked updated via @strapi/client successfully");
-              scheduleUpdated = true;
-            } catch (clientErr) {
-              // Log error detail untuk debug - termasuk response detail dari server
-              const axiosErrorDetails = axiosErr.response?.data || axiosErr.error || {};
-              const clientErrorDetails = clientErr.response?.data || clientErr.error || clientErr.data || {};
-              
-              console.error("Failed to update schedule isBooked:", {
-                axiosError: {
-                  message: axiosErr.message,
-                  status: axiosErr.response?.status,
-                  statusText: axiosErr.response?.statusText,
-                  data: axiosErr.response?.data,
-                  code: axiosErr.code,
-                },
-                clientError: {
-                  message: clientErr.message,
-                  status: clientErr.response?.status,
-                  data: clientErr.response?.data || clientErr.data,
-                  error: clientErr.error,
-                },
-                errorDetails: axiosErrorDetails.error || clientErrorDetails.error || {},
-                updateScheduleId,
-                documentId: schedule.documentId,
-                id: schedule.id,
-              });
-              
-              // CORS error atau network error
-              if (axiosErr.message?.includes('CORS') || 
-                  axiosErr.code === 'ERR_NETWORK' || 
-                  axiosErr.message?.includes('Network Error') ||
-                  axiosErr.message?.includes('blocked by CORS')) {
-                // Jika CORS error, skip update schedule - appointment sudah dibuat dengan phoneNumber
-                console.warn("CORS error saat update schedule, tapi appointment sudah dibuat dengan phoneNumber. Schedule akan tetap bisa di-booking ulang.");
-                toast.warning("Booking berhasil! Nomor telepon tersimpan. Namun update jadwal gagal karena CORS - silakan hubungi admin untuk memperbaiki CORS di Strapi Cloud.");
-              } else {
-                // Error lain (400, 404, dll)
-                const errorMsg = axiosErrorDetails.error?.message || 
-                                clientErrorDetails.error?.message ||
-                                axiosErrorDetails.message || 
-                                clientErrorDetails.message ||
-                                axiosErr.message || 
-                                clientErr.message ||
-                                "Update schedule gagal";
-                toast.warning(`Booking berhasil dengan nomor telepon! Namun update jadwal gagal: ${errorMsg}`);
+              response = await strapiAxios.put(
+                `/schedules/${updateScheduleId}`,
+                updateDataWithWrapper,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+            } catch (wrapperErr) {
+              // If wrapper fails, try direct format
+              response = await strapiAxios.put(
+                `/schedules/${updateScheduleId}`,
+                updateDataDirect,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+            }
+          } catch (axiosErr) {
+            // If 404 with id, try with documentId
+            if (
+              axiosErr.response?.status === 404 &&
+              schedule.documentId &&
+              updateScheduleId === schedule.id
+            ) {
+              try {
+                await strapiAxios.put(
+                  `/schedules/${schedule.documentId}`,
+                  updateDataWithWrapper,
+                  {
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+              } catch (docIdErr) {
+                throw docIdErr;
+              }
+            } else {
+              // Fallback to @strapi/client if axios fails
+              try {
+                const client = getStrapiClient();
+                // Try with wrapper format first
+                await client
+                  .collection("schedules")
+                  .update(updateScheduleId, updateDataWithWrapper);
+              } catch (clientErr) {
+                // Try with direct format
+                try {
+                  const client = getStrapiClient();
+                  await client
+                    .collection("schedules")
+                    .update(updateScheduleId, updateDataDirect);
+                } catch (directClientErr) {
+                  // Try with documentId if id failed
+                  if (schedule.documentId && updateScheduleId === schedule.id) {
+                    try {
+                      const client = getStrapiClient();
+                      await client
+                        .collection("schedules")
+                        .update(schedule.documentId, updateDataWithWrapper);
+                    } catch (docIdErr) {
+                      throw docIdErr;
+                    }
+                  } else {
+                    throw directClientErr;
+                  }
+                }
               }
             }
           }
@@ -404,26 +287,27 @@ const Booking = () => {
       }
 
       toast.success("Booking berhasil!");
-      
+
       // Refresh slots after booking untuk update list
       await fetchSlots();
-      
+
       // Navigate to "Jadwal Saya" setelah booking berhasil agar user bisa langsung lihat jadwalnya
       setTimeout(() => {
         navigate("/jadwal");
       }, 1000); // Delay 1 detik untuk memberikan waktu toast message terlihat
     } catch (err) {
       // Handle AbortError specifically
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      if (err.name === "AbortError" || err.message?.includes("aborted")) {
         toast.error("Booking dibatalkan");
       } else {
         // Extract detailed error message
         const errorData = err.response?.data || err.error || {};
-        const errorMsg = errorData.error?.message || 
-                        errorData.message || 
-                        err.message || 
-                        "Booking gagal";
-        
+        const errorMsg =
+          errorData.error?.message ||
+          errorData.message ||
+          err.message ||
+          "Booking gagal";
+
         toast.error(`Booking gagal: ${errorMsg}`);
       }
     } finally {
@@ -443,7 +327,11 @@ const Booking = () => {
         ) : slots && slots.length ? (
           <div className="booking-grid">
             {slots.map((s) => (
-              <SlotCard key={s.id || s.documentId} schedule={s} onBookClick={handleBookClick} />
+              <SlotCard
+                key={s.id || s.documentId}
+                schedule={s}
+                onBook={handleBook}
+              />
             ))}
           </div>
         ) : (

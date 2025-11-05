@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { getStrapiClient, strapiAxios } from "../../lib/strapiClient";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 function MedicalRecordDetail({ id }) {
   const [record, setRecord] = useState(null);
@@ -12,11 +14,13 @@ function MedicalRecordDetail({ id }) {
   async function fetchRecord() {
     try {
       const client = getStrapiClient();
-      const recordData = await client.collection('medical-records').findOne(id, {
-        populate: {
-          filePDF: true
-        }
-      });
+      const recordData = await client
+        .collection("medical-records")
+        .findOne(id, {
+          populate: {
+            filePDF: true,
+          },
+        });
       setRecord(recordData.data);
     } catch (error) {
       // Error handled silently

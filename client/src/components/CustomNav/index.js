@@ -71,20 +71,13 @@ const CustomNav = ({ isLoggedIn }) => {
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem>
-                      <NavLink tag={Link} to="/articles" onClick={toggle}>
-                        Articles
-                      </NavLink>
-                    </DropdownItem>
-                    <DropdownItem>
                       <NavLink tag={Link} to="/profile" onClick={toggle}>
                         Profil
                       </NavLink>
                     </DropdownItem>
                     <DropdownItem divider />
                     <DropdownItem>
-                      <div onClick={toggle}>
-                        {loginLogout}
-                      </div>
+                      <div onClick={toggle}>{loginLogout}</div>
                     </DropdownItem>
                   </DropdownMenu>
                 </>
