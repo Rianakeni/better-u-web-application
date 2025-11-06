@@ -11,22 +11,22 @@ export const useAppointments = () => {
     setLoading(true);
     try {
       const client = getStrapiClient();
-      
+
       // Fetch schedules dengan filter:
       // - isBooked: false (belum dibooking)
       // ATAU statusJadwal: "Cancelled" (sudah dibatalkan, bisa di-booking lagi)
       // Ini akan include schedule yang available dan yang cancelled
-      const schedulesData = await client.collection('schedules').find({
+      const schedulesData = await client.collection("schedules").find({
         filters: {
           $or: [
             { isBooked: { $eq: false } },
-            { statusJadwal: { $eq: "Cancelled" } }
-          ]
+            { statusJadwal: { $eq: "Cancelled" } },
+          ],
         },
-        populate: '*',
-        sort: ['tanggal:asc', 'jam_mulai:asc']
+        populate: "*",
+        sort: ["tanggal:asc", "jam_mulai:asc"],
       });
-      
+
       setSlots(schedulesData.data || []);
     } catch (err) {
       console.error("Error fetching available slots:", err);

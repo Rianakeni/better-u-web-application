@@ -22,6 +22,7 @@ code {
 .custom-nav .collapse {
   justify-content: flex-end;
   padding-right: 30pt;
+  padding-left: 30pt;
 }
 /* End Nav */
 
@@ -367,7 +368,7 @@ code {
       margin-top: 20px;
     }
     .history-card {
-      background: rgb(173, 255, 141);
+      background: white;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
@@ -937,7 +938,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3182ce 0%, #805ad5 100%);
+  background: linear-gradient(135deg, #3182ce 0%, #8ff7be 100%);
   padding: 1rem;
   font-family: sans-serif;
 }

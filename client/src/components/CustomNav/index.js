@@ -35,7 +35,7 @@ const CustomNav = ({ isLoggedIn }) => {
           <img
             src={logo}
             alt="BETTER-U"
-            height={77} // atur tinggi logo
+            height={90} // atur tinggi logo
             loading="lazy"
             style={{ display: "block" }}
           />

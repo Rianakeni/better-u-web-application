@@ -1,16 +1,18 @@
 // client/src/lib/strapiClient.js
-import { strapi } from '@strapi/client';
-import axios from 'axios';
-import { userData } from '../helpers';
+import { strapi } from "@strapi/client";
+import axios from "axios";
+import { userData } from "../helpers";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://radiant-gift-29f5c55e3b.strapiapp.com";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://radiant-gift-29f5c55e3b.strapiapp.com";
 
 // Strapi client untuk collections
 export const getStrapiClient = () => {
   const { jwt } = userData();
-  return strapi({ 
+  return strapi({
     baseURL: `${API_URL}/api`,
-    token: jwt 
+    token: jwt,
   });
 };
 
@@ -40,10 +42,10 @@ strapiAxios.interceptors.response.use(
     // Handle 401/403 errors
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Clear invalid token
-      localStorage.removeItem('user');
+      localStorage.removeItem("user");
       // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
@@ -56,7 +58,7 @@ export const fetchCurrentUser = async () => {
     // Strapi v5: /users/me endpoint mungkin tidak support populate avatar
     // atau field name-nya berbeda. Fetch tanpa populate dulu, jika perlu avatar
     // bisa di-fetch terpisah atau gunakan populate dengan format yang benar
-    const { data } = await strapiAxios.get('/users/me');
+    const { data } = await strapiAxios.get("/users/me");
     return data;
   } catch (err) {
     throw err;
@@ -70,7 +72,7 @@ export const getCurrentUserId = async () => {
 
 // Auth methods (tidak perlu token)
 export const login = async (identifier, password) => {
-  const { data } = await strapiAuthAxios.post('/auth/local', {
+  const { data } = await strapiAuthAxios.post("/auth/local", {
     identifier,
     password,
   });
@@ -78,20 +80,20 @@ export const login = async (identifier, password) => {
 };
 
 export const register = async (userData) => {
-  const { data } = await strapiAuthAxios.post('/auth/local/register', userData);
+  const { data } = await strapiAuthAxios.post("/auth/local/register", userData);
   return data;
 };
 
 // File upload
 export const uploadFile = async (file, name = null) => {
   const formData = new FormData();
-  formData.append('files', file);
+  formData.append("files", file);
   if (name) {
-    formData.append('name', name);
+    formData.append("name", name);
   }
-  const { data } = await strapiAxios.post('/upload', formData, {
+  const { data } = await strapiAxios.post("/upload", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
   return data;
@@ -103,7 +105,7 @@ export const updateUser = async (userId, userData) => {
   // Strapi v5: Format data dengan wrapper { data: { ... } }
   // Handle avatar: Strapi v5 expect ID saja (number), bukan object
   let formattedData = { ...userData };
-  
+
   // Handle avatar: Strapi v5 menggunakan relation 'avatar' dengan ID saja
   if (userData.avatarId) {
     // Format untuk Strapi v5: avatar sebagai relation ID (number saja, bukan object)
@@ -113,32 +115,32 @@ export const updateUser = async (userId, userData) => {
     delete formattedData.avatarUrl;
   } else if (userData.avatar) {
     // Jika avatar adalah object { id, url }, extract ID saja
-    if (typeof userData.avatar === 'object' && userData.avatar.id) {
+    if (typeof userData.avatar === "object" && userData.avatar.id) {
       formattedData.avatar = userData.avatar.id; // Extract ID saja
     } else {
       // Jika avatar sudah ID, pakai langsung
       formattedData.avatar = userData.avatar;
     }
   }
-  
+
   const updatePayload = {
-    data: formattedData
+    data: formattedData,
   };
 
   // Always use /users/me for Strapi v5 (more secure and doesn't need userId)
   try {
-    const { data } = await strapiAxios.put('/users/me', updatePayload, {
+    const { data } = await strapiAxios.put("/users/me", updatePayload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     return data;
   } catch (meErr) {
     // If /users/me fails, try without data wrapper (Strapi v4 style)
     try {
-      const { data } = await strapiAxios.put('/users/me', formattedData, {
+      const { data } = await strapiAxios.put("/users/me", formattedData, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       return data;
@@ -151,22 +153,22 @@ export const updateUser = async (userId, userData) => {
 // Helper untuk build query string dengan qs (untuk query kompleks yang tidak support di Strapi client)
 export const buildStrapiQuery = (params) => {
   const queryParts = [];
-  
-  Object.keys(params).forEach(key => {
+
+  Object.keys(params).forEach((key) => {
     const value = params[key];
-    
+
     // Handle string keys dengan brackets (seperti 'filters[student][id]')
-    if (key.includes('[')) {
+    if (key.includes("[")) {
       queryParts.push(`${key}=${encodeURIComponent(value)}`);
-    } else if (key === 'populate') {
+    } else if (key === "populate") {
       // Handle populate - format array untuk multiple populate
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         // Jika string adalah '*' atau 'true', gunakan langsung
-        if (value === '*' || value === 'true') {
+        if (value === "*" || value === "true") {
           queryParts.push(`populate=*`);
-        } else if (value.includes(',')) {
+        } else if (value.includes(",")) {
           // Jika string dengan comma, convert ke array format
-          const populateFields = value.split(',').map(f => f.trim());
+          const populateFields = value.split(",").map((f) => f.trim());
           populateFields.forEach((field, index) => {
             queryParts.push(`populate[${index}]=${field}`);
           });
@@ -178,49 +180,67 @@ export const buildStrapiQuery = (params) => {
         value.forEach((field, index) => {
           queryParts.push(`populate[${index}]=${field}`);
         });
-      } else if (typeof value === 'object' && value !== null) {
+      } else if (typeof value === "object" && value !== null) {
         // Handle populate object format (Strapi v5 nested populate)
         // Contoh: { schedule: { populate: '*' }, konselor: true }
         Object.keys(value).forEach((field, index) => {
           const fieldValue = value[field];
-          if (typeof fieldValue === 'object' && fieldValue !== null) {
+          if (typeof fieldValue === "object" && fieldValue !== null) {
             // Nested populate seperti { schedule: { populate: '*' } }
             if (fieldValue.populate) {
-              if (fieldValue.populate === '*') {
+              if (fieldValue.populate === "*") {
                 queryParts.push(`populate[${field}][populate]=*`);
               } else {
-                queryParts.push(`populate[${field}][populate]=${encodeURIComponent(fieldValue.populate)}`);
+                queryParts.push(
+                  `populate[${field}][populate]=${encodeURIComponent(
+                    fieldValue.populate
+                  )}`
+                );
               }
             } else {
               // Complex nested object - convert to JSON string
-              queryParts.push(`populate[${field}]=${encodeURIComponent(JSON.stringify(fieldValue))}`);
+              queryParts.push(
+                `populate[${field}]=${encodeURIComponent(
+                  JSON.stringify(fieldValue)
+                )}`
+              );
             }
           } else if (fieldValue === true) {
             // Simple populate: { konselor: true }
             queryParts.push(`populate[${field}]=true`);
           } else {
-            queryParts.push(`populate[${field}]=${encodeURIComponent(fieldValue)}`);
+            queryParts.push(
+              `populate[${field}]=${encodeURIComponent(fieldValue)}`
+            );
           }
         });
       } else {
         queryParts.push(`populate=${encodeURIComponent(value)}`);
       }
-    } else if (key === 'filters' && typeof value === 'object') {
+    } else if (key === "filters" && typeof value === "object") {
       // Handle filters object
       if (value.student?.id) {
         queryParts.push(`filters[student][id]=${value.student.id}`);
       }
       if (value.statusJadwal) {
-        queryParts.push(`filters[statusJadwal]=${encodeURIComponent(value.statusJadwal)}`);
+        queryParts.push(
+          `filters[statusJadwal]=${encodeURIComponent(value.statusJadwal)}`
+        );
       }
       // Handle $and operator
       if (value.$and && Array.isArray(value.$and)) {
         value.$and.forEach((filter, index) => {
           if (filter.student?.id) {
-            queryParts.push(`filters[$and][${index}][student][id]=${filter.student.id}`);
+            queryParts.push(
+              `filters[$and][${index}][student][id]=${filter.student.id}`
+            );
           }
           if (filter.statusJadwal) {
-            queryParts.push(`filters[$and][${index}][statusJadwal]=${encodeURIComponent(filter.statusJadwal)}`);
+            queryParts.push(
+              `filters[$and][${index}][statusJadwal]=${encodeURIComponent(
+                filter.statusJadwal
+              )}`
+            );
           }
         });
       }
@@ -229,14 +249,14 @@ export const buildStrapiQuery = (params) => {
       queryParts.push(`${key}=${encodeURIComponent(value)}`);
     }
   });
-  
-  return queryParts.join('&');
+
+  return queryParts.join("&");
 };
 
 // Fetch dengan axios untuk query kompleks (fallback jika Strapi client tidak support)
 export const fetchWithQuery = async (endpoint, queryParams) => {
   const query = buildStrapiQuery(queryParams);
-  
+
   try {
     const { data } = await strapiAxios.get(`${endpoint}?${query}`);
     return data;
@@ -244,4 +264,3 @@ export const fetchWithQuery = async (endpoint, queryParams) => {
     throw error;
   }
 };
-

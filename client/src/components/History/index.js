@@ -13,7 +13,7 @@ const HistoryCard = ({ item }) => {
   const tanggal = scheduleData.tanggal;
   const jam_mulai = scheduleData.jam_mulai;
   const jam_selesai = scheduleData.jam_selesai;
-  
+
   // Format jam: jika ada jam_mulai dan jam_selesai, tampilkan range; jika hanya jam_mulai, tampilkan jam_mulai saja
   const jam =
     jam_mulai && jam_selesai

@@ -40,7 +40,9 @@ export const useDashboard = (token) => {
         // NOTE: Gunakan booked_by (underscore) karena itu nama field di schema Strapi
         // Hapus populate=* dan populate[field]=* yang menyebabkan error
         // Kita akan akses data langsung dari response tanpa populate
-        const upcomingUrl = `/schedules?filters[booked_by][id]=${userId}&filters[isBooked]=true&filters[statusJadwal]=${encodeURIComponent('Scheduled ')}&sort=tanggal:ASC`;
+        const upcomingUrl = `/schedules?filters[booked_by][id]=${userId}&filters[isBooked]=true&filters[statusJadwal]=${encodeURIComponent(
+          "Scheduled "
+        )}&sort=tanggal:ASC`;
         console.log("🔵 Fetching upcoming schedules from:", upcomingUrl);
         const { data: upcomingData } = await strapiAxios.get(upcomingUrl);
 

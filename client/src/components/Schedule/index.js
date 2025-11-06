@@ -46,7 +46,7 @@ const AppointmentCard = ({ schedule, onEdit, onCancel }) => {
       jam_selesai,
       hasJamMulai: !!jam_mulai,
       hasJamSelesai: !!jam_selesai,
-      fullScheduleData: JSON.stringify(scheduleData, null, 2)
+      fullScheduleData: JSON.stringify(scheduleData, null, 2),
     });
   }
 
@@ -233,11 +233,11 @@ const MySchedule = ({ token }) => {
 
   const handleCancel = async (appt) => {
     if (cancelling) return; // Prevent multiple clicks
-    
+
     setCancelling(true);
     try {
       const scheduleId = appt.id || appt.documentId;
-      
+
       if (!scheduleId) {
         toast.error("Schedule ID tidak ditemukan");
         setCancelling(false);
@@ -246,50 +246,56 @@ const MySchedule = ({ token }) => {
 
       // Update schedule: statusJadwal="Cancelled", isBooked=false, booked_by=null, phoneNumber=null
       // Server Strapi mengharapkan payload dengan wrapper { data: { ... } }
-      
+
       const updateScheduleId = appt.documentId || appt.id || scheduleId;
-      
+
       const updatePayload = {
         data: {
           statusJadwal: "Cancelled",
           isBooked: false,
           booked_by: null,
-          phoneNumber: null
-        }
+          phoneNumber: null,
+        },
       };
 
       let updateSuccess = false;
-      
+
       // Try axios first dengan format yang benar (wrapper data)
       try {
         await strapiAxios.put(`/schedules/${updateScheduleId}`, updatePayload, {
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
         updateSuccess = true;
         console.log("✅ Schedule cancelled successfully via axios");
       } catch (axiosErr) {
         // Skip if it's an abort error from axios
-        if (axiosErr.name === 'AbortError' || axiosErr.code === 'ERR_CANCELED') {
+        if (
+          axiosErr.name === "AbortError" ||
+          axiosErr.code === "ERR_CANCELED"
+        ) {
           console.warn("Request was aborted, skipping fallback");
           setCancelling(false);
           toast.error("Request dibatalkan. Silakan coba lagi.");
           return;
         }
-        
+
         // Jika axios gagal karena CORS atau error lain, coba dengan @strapi/client
-        console.warn("Axios update failed, trying @strapi/client:", axiosErr.message || axiosErr);
-        
+        console.warn(
+          "Axios update failed, trying @strapi/client:",
+          axiosErr.message || axiosErr
+        );
+
         try {
           const client = getStrapiClient();
           // Strapi v5: Prioritas documentId untuk update, fallback ke id
           // Gunakan booked_by (underscore) sesuai schema
-          await client.collection('schedules').update(updateScheduleId, {
+          await client.collection("schedules").update(updateScheduleId, {
             statusJadwal: "Cancelled",
             isBooked: false,
             booked_by: null,
-            phoneNumber: null
+            phoneNumber: null,
           });
           updateSuccess = true;
           console.log("✅ Schedule cancelled successfully via @strapi/client");
@@ -300,27 +306,30 @@ const MySchedule = ({ token }) => {
               message: axiosErr.message,
               response: axiosErr.response?.data,
               status: axiosErr.response?.status,
-              code: axiosErr.code
+              code: axiosErr.code,
             },
             clientErr: {
               message: clientErr.message,
               error: clientErr.error,
-              response: clientErr.response
+              response: clientErr.response,
             },
             scheduleId: scheduleId,
             documentId: appt.documentId,
-            id: appt.id
+            id: appt.id,
           });
-          
+
           // Extract error message dari clientErr terlebih dahulu
-          const clientErrorData = clientErr.error || clientErr.response?.data || {};
-          const errorMsg = clientErrorData.error?.message || 
-                          clientErrorData.message || 
-                          clientErr.message ||
-                          (axiosErr.response?.data?.error?.message || axiosErr.response?.data?.message) ||
-                          axiosErr.message ||
-                          "Gagal membatalkan jadwal";
-          
+          const clientErrorData =
+            clientErr.error || clientErr.response?.data || {};
+          const errorMsg =
+            clientErrorData.error?.message ||
+            clientErrorData.message ||
+            clientErr.message ||
+            axiosErr.response?.data?.error?.message ||
+            axiosErr.response?.data?.message ||
+            axiosErr.message ||
+            "Gagal membatalkan jadwal";
+
           throw new Error(errorMsg);
         }
       }
@@ -328,12 +337,12 @@ const MySchedule = ({ token }) => {
       if (updateSuccess) {
         // Show success notification
         toast.success("Jadwal berhasil dibatalkan!");
-        
+
         // Refresh data setelah cancel (tunggu sedikit agar toast terlihat)
         setTimeout(() => {
           refresh();
         }, 500);
-        
+
         // Redirect ke halaman booking setelah delay
         setTimeout(() => {
           navigate("/booking");
@@ -341,15 +350,20 @@ const MySchedule = ({ token }) => {
       }
     } catch (error) {
       console.error("Error canceling schedule:", error);
-      
+
       // Handle abort error specifically
-      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || error.message?.includes('aborted')) {
+      if (
+        error.name === "AbortError" ||
+        error.code === "ERR_CANCELED" ||
+        error.message?.includes("aborted")
+      ) {
         toast.error("Request dibatalkan. Silakan coba lagi.");
       } else {
-        const errorMessage = error.response?.data?.error?.message || 
-                            error.response?.data?.message || 
-                            error.message || 
-                            "Gagal membatalkan jadwal";
+        const errorMessage =
+          error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          error.message ||
+          "Gagal membatalkan jadwal";
         toast.error(`Gagal membatalkan jadwal: ${errorMessage}`);
       }
     } finally {
