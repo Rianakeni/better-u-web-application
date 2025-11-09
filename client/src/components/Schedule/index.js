@@ -33,7 +33,7 @@ const AppointmentCard = ({ schedule, onEdit, onCancel }) => {
     scheduleData.konselor?.data?.username ||
     scheduleData.konselor?.data?.attributes?.username ||
     scheduleData.konselor?.email ||
-    "dr. konselor";
+    "konselor";
 
   // Debug log jika data tidak ada
   if (!tanggal || !jam_mulai || !jam_selesai) {
@@ -150,69 +150,6 @@ const AppointmentCard = ({ schedule, onEdit, onCancel }) => {
     </div>
   );
 };
-
-// const AppointmentCard = ({ appt, onEdit, onCancel }) => {
-//   const attrs = appt.attributes || appt || {};
-
-//   // Mendapatkan data jadwal
-//   const scheduleRel =
-//     attrs.schedule?.data?.attributes || attrs.schedule?.data || attrs.schedule || {};
-//   const tanggal = scheduleRel?.tanggal || attrs.date;
-//   const jam_mulai = scheduleRel.jam_mulai || attrs.start_time;
-//   const jam_selesai = scheduleRel.jam_selesai || attrs.end_time;
-//   const konselor = attrs.konselor?.data?.attributes?.username || attrs.konselor || "dr. konselor";
-
-//   // Format tanggal dan jam
-//   const jam = jam_mulai && jam_selesai ? `${jam_mulai} - ${jam_selesai}` : "-";
-//   const status = attrs.statusJadwal?.trim();
-//   const statusLabel =
-//     status === "Scheduled"
-//       ? "di jadwalkan"
-//       : status === "Cancelled"
-//       ? "dibatalkan"
-//       : status === "Completed"
-//       ? "selesai"
-//       : "belum dijadwalkan";
-
-//   return (
-//     <div className="appointment-card">
-//       <div className="appointment-card-header">
-//         <FaCalendarAlt />
-//         <span className="appointment-date">
-//           {tanggal ? new Date(tanggal).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "-"}
-//         </span>
-//       </div>
-
-//       <div className="appointment-card-body">
-//         <div className="appointment-time">
-//           <FaClock />
-//           <span>{jam}</span>
-//         </div>
-//         <div className="appointment-doctor">
-//           <FaUserMd />
-//           <span>{konselor}</span>
-//         </div>
-//       </div>
-
-//       <div className="appointment-card-footer">
-//         <button
-//           className="cancel-btn"
-//           style={{ backgroundColor: "#e53e3e", color: "white" }}
-//           onClick={() => onCancel(appt)}
-//         >
-//           Batalkan Jadwal
-//         </button>
-//         <button
-//           className="edit-btn"
-//           style={{ backgroundColor: "#3182ce", color: "white" }}
-//           onClick={() => onEdit(appt)}
-//         >
-//           Ubah Jadwal
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
 
 const MySchedule = ({ token }) => {
   const { appointments, loading, refresh } = useMySchedule(token);

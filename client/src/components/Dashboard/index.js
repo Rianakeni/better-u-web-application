@@ -24,7 +24,7 @@ const SmallItem = ({ item, type }) => {
     scheduleData.konselor?.data?.username ||
     scheduleData.konselor?.data?.attributes?.username ||
     scheduleData.konselor?.email ||
-    "dr. konselor";
+    "konselor";
 
   const dateStr = tanggal
     ? new Date(tanggal).toLocaleDateString("id-ID", {

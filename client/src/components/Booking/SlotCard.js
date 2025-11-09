@@ -37,7 +37,7 @@ const SlotCard = ({ schedule, onBookClick }) => {
         <div className="slot-time">
           {jam_mulai} - {jam_selesai}
         </div>
-        <div className="slot-doctor">Mem {konselor}</div>
+        <div className="slot-doctor">{konselor}</div>
       </div>
       <div className="slot-right">
         <button className="btn-book" onClick={() => onBookClick(schedule)}>
