@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { IoPersonCircleOutline } from "react-icons/io5";
 import { fetchCurrentUser } from "../../lib/strapiClient";
 import QuoteCard from "./quoteCard";
 

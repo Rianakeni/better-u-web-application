@@ -12,7 +12,6 @@ const API_URL =
 const Articles = () => {
   const { articles, loading, error, deleteArticle, updateArticle } =
     useArticles();
-  const [newArticleTitle, setNewArticleTitle] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const navigate = useNavigate();
 
