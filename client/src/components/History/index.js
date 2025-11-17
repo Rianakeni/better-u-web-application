@@ -28,7 +28,7 @@ const HistoryCard = ({ item }) => {
     scheduleData.konselor?.data?.username ||
     scheduleData.konselor?.data?.attributes?.username ||
     scheduleData.konselor?.email ||
-    "dr. konselor";
+    "konselor";
 
   return (
     <div className="scheduled-card">

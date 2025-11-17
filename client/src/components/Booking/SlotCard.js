@@ -19,7 +19,7 @@ const SlotCard = ({ schedule, onBookClick }) => {
     attrs.konselor?.data?.nama ||
     attrs.konselor?.nama ||
     attrs.konselor ||
-    "dr. konselor";
+    "konselor";
 
   return (
     <div className="slot-card">

@@ -55,7 +55,7 @@ const BookingForm = ({ schedule, isOpen, onClose, onConfirm }) => {
     attrs.konselor?.data?.nama ||
     attrs.konselor?.nama ||
     attrs.konselor ||
-    "dr. konselor";
+    "konselor";
 
   const dateStr = tanggal
     ? new Date(tanggal).toLocaleDateString("id-ID", {
